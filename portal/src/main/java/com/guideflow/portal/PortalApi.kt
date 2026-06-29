@@ -1,5 +1,6 @@
 package com.guideflow.portal
 
+import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.CreateFlowRequest
 import com.guideflow.shared.CreateProjectRequest
 import com.guideflow.shared.CreateProjectResponse
@@ -74,6 +75,9 @@ class PortalApi(
 
     suspend fun publishFlow(flowId: String, token: String?): TutorialFlow =
         http.post("$baseUrl/api/flows/$flowId/publish") { authorize(token) }.body()
+
+    suspend fun getAnalytics(flowId: String, token: String?): AnalyticsSummary =
+        http.get("$baseUrl/api/flows/$flowId/analytics") { authorize(token) }.body()
 
     // --- steps ---
     suspend fun addStep(flowId: String, req: CreateStepRequest, token: String?): TutorialStep =

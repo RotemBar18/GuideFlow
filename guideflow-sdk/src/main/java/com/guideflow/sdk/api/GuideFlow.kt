@@ -1,6 +1,7 @@
 package com.guideflow.sdk.api
 
 import android.content.Context
+import com.guideflow.sdk.analytics.AnalyticsManager
 import com.guideflow.sdk.anchor.AnchorManager
 import com.guideflow.sdk.config.ConfigClient
 import com.guideflow.sdk.config.ConfigRepository
@@ -35,10 +36,14 @@ object GuideFlow {
     private var configClient: ConfigClient? = null
     private var storage: ConfigStorage? = null
     private var repository: ConfigRepository? = null
+    private var analytics: AnalyticsManager? = null
 
     // Engine internals shared by the Compose layer (host, anchor modifier, overlays).
     internal val anchors: AnchorManager = AnchorManager()
-    internal val coordinator: FlowCoordinator = FlowCoordinator { listener }
+    internal val coordinator: FlowCoordinator = FlowCoordinator(
+        listenerProvider = { listener },
+        recordEvent = { type, flowId, stepId -> analytics?.record(flowId, stepId, type) },
+    )
 
     /**
      * Initialize the SDK: load any cached config immediately, then refresh from the
@@ -55,6 +60,11 @@ object GuideFlow {
         configClient = client
         storage = cache
         repository = repo
+        analytics = if (config.enableAnalytics) {
+            AnalyticsManager(context, config.baseUrl, projectKey) { userHash }
+        } else {
+            null
+        }
 
         scope.launch {
             repo.loadCached()
@@ -114,6 +124,9 @@ object GuideFlow {
     fun stopFlow(reason: StopReason = StopReason.MANUAL) {
         coordinator.stop(reason)
     }
+
+    /** Upload queued analytics now. Returns the number of events the server accepted. */
+    suspend fun flush(): Result<Int> = analytics?.flush() ?: Result.success(0)
 
     private fun hashUserId(userId: String): String =
         MessageDigest.getInstance("SHA-256")

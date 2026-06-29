@@ -1,9 +1,14 @@
 package com.guideflow.backend
 
+import com.guideflow.shared.AnalyticsBatch
+import com.guideflow.shared.AnalyticsBatchResponse
+import com.guideflow.shared.AnalyticsEvent
+import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.CreateFlowRequest
 import com.guideflow.shared.CreateProjectRequest
 import com.guideflow.shared.CreateProjectResponse
 import com.guideflow.shared.CreateStepRequest
+import com.guideflow.shared.EventType
 import com.guideflow.shared.StepType
 import com.guideflow.backend.auth.DevAuthProvider
 import com.guideflow.shared.TutorialConfig
@@ -60,6 +65,42 @@ class BackendTest {
             setBody(json.encodeToString(req))
         }
         assertEquals(HttpStatusCode.Created, res.status)
+    }
+
+    private var seq = 0
+    private fun ev(flowId: String, type: EventType, stepId: String? = null) = AnalyticsEvent(
+        eventId = "e${seq++}", flowId = flowId, stepId = stepId, eventType = type,
+        timestamp = 0, sessionId = "sess",
+    )
+
+    @Test
+    fun analyticsBatch_updatesSummary() = testApplication {
+        installApp()
+        val created = createProject()
+        val flow = createFlow(created.project.projectId, "tour")
+
+        val batch = AnalyticsBatch(
+            listOf(
+                ev(flow.id, EventType.FLOW_STARTED),
+                ev(flow.id, EventType.STEP_SHOWN, "s1"),
+                ev(flow.id, EventType.STEP_SHOWN, "s1"),
+                ev(flow.id, EventType.FLOW_COMPLETED),
+            ),
+        )
+        val res = client.post("/api/client/events/batch") {
+            header(keyHeader, created.projectKey)
+            contentType(ContentType.Application.Json)
+            setBody(json.encodeToString(batch))
+        }
+        assertEquals(HttpStatusCode.OK, res.status)
+        assertEquals(4, json.decodeFromString<AnalyticsBatchResponse>(res.bodyAsText()).acceptedEventIds.size)
+
+        val summary = json.decodeFromString<AnalyticsSummary>(
+            client.get("/api/flows/${flow.id}/analytics").bodyAsText(),
+        )
+        assertEquals(1, summary.started)
+        assertEquals(1, summary.completed)
+        assertEquals(2, summary.stepViews["s1"])
     }
 
     @Test

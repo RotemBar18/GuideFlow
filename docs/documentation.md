@@ -26,7 +26,8 @@ The system has five parts: the SDK (`guideflow-sdk`), a demo host app (`app`), t
 - Automatic modal fallback when an anchor is missing on screen, plus an anchor-missing callback. The SDK does not crash the host app.
 - One-request remote config (`GET /api/client/config`) with `304 Not Modified` based on config version.
 - Offline cache in DataStore. A failed refresh keeps the last good config.
-- Authoring portal with Google Sign-In, project/flow/step CRUD, publish-time validation, and a live step preview.
+- Analytics: flow and step events are queued locally (Room) and uploaded in the background (WorkManager); the backend aggregates per-flow summaries shown in the portal.
+- Authoring portal with Google Sign-In, project/flow/step CRUD, publish-time validation, a live step preview, and a per-flow analytics view.
 - Security: Firebase ID-token verification, per-request project-ownership checks, SHA-256 hashed project keys, and hashed SDK user IDs.
 
 ## Implementation
@@ -47,6 +48,7 @@ Delivery path: the SDK calls `GET /api/client/config` with the project key. The 
 - `FlowCoordinator`: pure-Kotlin StateFlow engine holding the active flow and step index; handles Next/Back/Skip/Complete and blocks concurrent flows.
 - `GuideFlowHost` and overlays: render host content and, above it, the overlay for the current step; a missing anchor routes to `ModalFallback`.
 - `ConfigClient`, `ConfigRepository`, `ConfigStorage`: fetch (Ktor), keep last good config in memory, and persist to DataStore.
+- `AnalyticsManager`, `EventDatabase` (Room), `AnalyticsUploadWorker` (WorkManager): the coordinator emits events to the manager, which queues them in Room (capped at 1000) and schedules a worker that uploads batches and deletes only acknowledged events.
 
 ### Backend internals
 

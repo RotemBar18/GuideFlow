@@ -25,7 +25,8 @@ The backend is deployed on Google Cloud Run and works from any network:
 - Missing-anchor fallback: a tooltip or spotlight whose anchor is not on screen falls back to a modal and emits an anchor-missing callback. The SDK does not crash the host app.
 - One-request remote config (`GET /api/client/config`), with `304 Not Modified` based on config version.
 - Offline cache in DataStore. A failed refresh keeps the previous config.
-- Authoring portal: Google Sign-In, project/flow/step CRUD, publish with validation, and a live step preview.
+- Analytics: the SDK records flow and step events into a Room queue and uploads them with WorkManager (deleting only events the server acknowledges); the backend aggregates per-flow summaries that the portal displays.
+- Authoring portal: Google Sign-In, project/flow/step CRUD, publish with validation, a live step preview, and a per-flow analytics view.
 - Security: Firebase ID-token verification, project-ownership checks, hashed project keys, and hashed SDK user IDs.
 
 ## Screenshots
@@ -113,6 +114,7 @@ object GuideFlow {
     suspend fun refreshConfig(): Result<Unit>     // fetch latest published config
     fun startFlow(flowKey: String): Result<Unit>
     fun stopFlow(reason: StopReason = StopReason.MANUAL)
+    suspend fun flush(): Result<Int>             // upload queued analytics now
     fun loadLocalFlows(flows: List<TutorialFlow>) // offline / test fallback
 }
 
@@ -160,6 +162,9 @@ enum class StopReason { MANUAL, COMPLETED, SKIPPED }
 | `config/ConfigClient` | Ktor client for `/api/client/config`; never throws |
 | `config/ConfigRepository` | Source of truth; keeps the previous config on failure |
 | `config/ConfigStorage` | DataStore cache (config JSON, version, user-id hash) |
+| `analytics/AnalyticsManager` | Builds events, queues them in Room, schedules the upload worker |
+| `analytics/EventDatabase` | Room queue (`guideflow_events`), capped at 1000, oldest dropped first |
+| `analytics/AnalyticsUploadWorker` | WorkManager job that uploads batches and deletes acknowledged events |
 
 ### Backend internals (package `com.guideflow.backend`)
 
@@ -191,6 +196,8 @@ Portal endpoints require `Authorization: Bearer <Firebase ID token>` and enforce
 | PUT | `/api/steps/{stepId}` | Bearer | Update a step |
 | DELETE | `/api/steps/{stepId}` | Bearer | Delete a step |
 | GET | `/api/client/config` | Project key | SDK config; supports `?currentVersion` for 304 |
+| POST | `/api/client/events/batch` | Project key | SDK: upload a batch of analytics events |
+| GET | `/api/flows/{flowId}/analytics` | Bearer | Per-flow analytics summary |
 
 Errors are returned as `{ "code": "...", "message": "..." }` with the matching HTTP status.
 

@@ -23,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -64,6 +65,7 @@ fun StepsScreen(
     onBack: () -> Unit,
     onAddStep: () -> Unit,
     onEditStep: (TutorialStep) -> Unit,
+    onAnalytics: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var current by remember { mutableStateOf(flow) }
@@ -103,7 +105,8 @@ fun StepsScreen(
                 title = current.name,
                 onBack = onBack,
                 status = { StatusPill(current.status) },
-                subtitle = if (current.status == FlowStatus.DRAFT) "Draft — publish to make it live." else "Live.",
+                subtitle = if (current.status == FlowStatus.DRAFT) "Draft - publish to make it live." else "Live.",
+                action = { TextButton(onClick = onAnalytics) { Text("Analytics") } },
             )
         },
         bottomBar = {

@@ -41,7 +41,7 @@ class FlowCoordinatorTest {
     @Test
     fun start_setsFirstStepAndNotifies() {
         val listener = RecordingListener()
-        val coordinator = FlowCoordinator { listener }
+        val coordinator = FlowCoordinator(listenerProvider = { listener })
 
         val result = coordinator.start(flow(1, 2, 3))
 
@@ -52,7 +52,7 @@ class FlowCoordinatorTest {
 
     @Test
     fun start_sortsStepsByOrder() {
-        val coordinator = FlowCoordinator { null }
+        val coordinator = FlowCoordinator(listenerProvider = { null })
 
         coordinator.start(flow(3, 1, 2))
 
@@ -61,7 +61,7 @@ class FlowCoordinatorTest {
 
     @Test
     fun next_advancesStep() {
-        val coordinator = FlowCoordinator { null }
+        val coordinator = FlowCoordinator(listenerProvider = { null })
         coordinator.start(flow(1, 2, 3))
 
         coordinator.next()
@@ -72,7 +72,7 @@ class FlowCoordinatorTest {
     @Test
     fun next_onLastStep_completesAndClears() {
         val listener = RecordingListener()
-        val coordinator = FlowCoordinator { listener }
+        val coordinator = FlowCoordinator(listenerProvider = { listener })
         coordinator.start(flow(1, 2))
 
         coordinator.next() // -> last step
@@ -84,7 +84,7 @@ class FlowCoordinatorTest {
 
     @Test
     fun back_goesToPreviousStep() {
-        val coordinator = FlowCoordinator { null }
+        val coordinator = FlowCoordinator(listenerProvider = { null })
         coordinator.start(flow(1, 2, 3))
         coordinator.next()
 
@@ -95,7 +95,7 @@ class FlowCoordinatorTest {
 
     @Test
     fun back_onFirstStep_isNoOp() {
-        val coordinator = FlowCoordinator { null }
+        val coordinator = FlowCoordinator(listenerProvider = { null })
         coordinator.start(flow(1, 2))
 
         coordinator.back()
@@ -106,7 +106,7 @@ class FlowCoordinatorTest {
     @Test
     fun skip_clearsFlowAndNotifies() {
         val listener = RecordingListener()
-        val coordinator = FlowCoordinator { listener }
+        val coordinator = FlowCoordinator(listenerProvider = { listener })
         coordinator.start(flow(1, 2))
 
         coordinator.skip()
@@ -117,7 +117,7 @@ class FlowCoordinatorTest {
 
     @Test
     fun start_whenAlreadyActive_fails() {
-        val coordinator = FlowCoordinator { null }
+        val coordinator = FlowCoordinator(listenerProvider = { null })
         coordinator.start(flow(1))
 
         val second = coordinator.start(flow(1))
@@ -128,7 +128,7 @@ class FlowCoordinatorTest {
     @Test
     fun stopManual_clearsWithoutLifecycleCallback() {
         val listener = RecordingListener()
-        val coordinator = FlowCoordinator { listener }
+        val coordinator = FlowCoordinator(listenerProvider = { listener })
         coordinator.start(flow(1, 2))
 
         coordinator.stop(StopReason.MANUAL)

@@ -58,6 +58,7 @@ private sealed interface Screen {
     data class Flows(val project: ProjectDto) : Screen
     data class Steps(val project: ProjectDto, val flow: TutorialFlow) : Screen
     data class StepEdit(val project: ProjectDto, val flow: TutorialFlow, val step: TutorialStep?) : Screen
+    data class Analytics(val project: ProjectDto, val flow: TutorialFlow) : Screen
 }
 
 @Composable
@@ -109,10 +110,15 @@ private fun PortalApp() {
             onBack = { screen = Screen.Flows(s.project) },
             onAddStep = { screen = Screen.StepEdit(s.project, s.flow, null) },
             onEditStep = { step -> screen = Screen.StepEdit(s.project, s.flow, step) },
+            onAnalytics = { screen = Screen.Analytics(s.project, s.flow) },
         )
         is Screen.StepEdit -> StepEditorScreen(
             api = api, flow = s.flow, existing = s.step, getToken = getToken,
             onClose = { screen = Screen.Steps(s.project, s.flow) },
+        )
+        is Screen.Analytics -> AnalyticsScreen(
+            api = api, flow = s.flow, getToken = getToken,
+            onBack = { screen = Screen.Steps(s.project, s.flow) },
         )
     }
 }

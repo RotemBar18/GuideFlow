@@ -2,6 +2,7 @@ package com.guideflow.sdk.flow
 
 import com.guideflow.sdk.api.GuideFlowListener
 import com.guideflow.sdk.api.StopReason
+import com.guideflow.shared.EventType
 import com.guideflow.shared.TutorialFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,11 +13,12 @@ import kotlinx.coroutines.flow.asStateFlow
  * the navigation logic is unit-testable. Exposes [activeFlow] as a [StateFlow] the
  * Compose host observes; null means no flow is running.
  *
- * Listener callbacks are routed through [listenerProvider] so the listener can be
- * swapped at runtime without rebuilding the coordinator.
+ * [recordEvent] receives analytics events (type, flowId, stepId); it defaults to a
+ * no-op so unit tests can construct the coordinator with just a listener.
  */
 internal class FlowCoordinator(
     private val listenerProvider: () -> GuideFlowListener?,
+    private val recordEvent: (EventType, String, String?) -> Unit = { _, _, _ -> },
 ) {
     private val _activeFlow = MutableStateFlow<ActiveFlowState?>(null)
     val activeFlow: StateFlow<ActiveFlowState?> = _activeFlow.asStateFlow()
@@ -31,11 +33,14 @@ internal class FlowCoordinator(
         _activeFlow.value = ActiveFlowState(ordered, currentStepIndex = 0)
         listener?.onFlowStarted(ordered.flowKey)
         listener?.onStepChanged(ordered.flowKey, 0)
+        recordEvent(EventType.FLOW_STARTED, ordered.id, null)
+        recordEvent(EventType.STEP_SHOWN, ordered.id, ordered.steps.firstOrNull()?.id)
         return Result.success(Unit)
     }
 
     fun next() {
         val state = _activeFlow.value ?: return
+        recordEvent(EventType.STEP_COMPLETED, state.flow.id, state.currentStep.id)
         if (state.isLastStep) {
             complete()
             return
@@ -43,6 +48,7 @@ internal class FlowCoordinator(
         val index = state.currentStepIndex + 1
         _activeFlow.value = state.copy(currentStepIndex = index)
         listener?.onStepChanged(state.flow.flowKey, index)
+        recordEvent(EventType.STEP_SHOWN, state.flow.id, state.flow.steps[index].id)
     }
 
     fun back() {
@@ -51,18 +57,21 @@ internal class FlowCoordinator(
         val index = state.currentStepIndex - 1
         _activeFlow.value = state.copy(currentStepIndex = index)
         listener?.onStepChanged(state.flow.flowKey, index)
+        recordEvent(EventType.STEP_SHOWN, state.flow.id, state.flow.steps[index].id)
     }
 
     fun skip() {
         val state = _activeFlow.value ?: return
         _activeFlow.value = null
         listener?.onFlowSkipped(state.flow.flowKey)
+        recordEvent(EventType.FLOW_SKIPPED, state.flow.id, state.currentStep.id)
     }
 
     /** Notify the listener that the current step's anchor could not be found. */
     fun notifyAnchorMissing(anchorKey: String) {
-        val flowKey = _activeFlow.value?.flow?.flowKey ?: return
-        listener?.onAnchorMissing(flowKey, anchorKey)
+        val state = _activeFlow.value ?: return
+        listener?.onAnchorMissing(state.flow.flowKey, anchorKey)
+        recordEvent(EventType.ANCHOR_MISSING, state.flow.id, state.currentStep.id)
     }
 
     fun stop(reason: StopReason) {
@@ -78,5 +87,6 @@ internal class FlowCoordinator(
         val state = _activeFlow.value ?: return
         _activeFlow.value = null
         listener?.onFlowCompleted(state.flow.flowKey)
+        recordEvent(EventType.FLOW_COMPLETED, state.flow.id, null)
     }
 }

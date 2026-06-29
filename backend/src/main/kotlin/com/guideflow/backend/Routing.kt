@@ -1,6 +1,8 @@
 package com.guideflow.backend
 
 import com.guideflow.backend.auth.AuthProvider
+import com.guideflow.shared.AnalyticsBatch
+import com.guideflow.shared.AnalyticsBatchResponse
 import com.guideflow.shared.CreateFlowRequest
 import com.guideflow.shared.CreateProjectRequest
 import com.guideflow.shared.CreateProjectResponse
@@ -124,6 +126,11 @@ private fun io.ktor.server.routing.Route.flowRoutes(store: GuideFlowStore, auth:
             store.assertFlowOwned(flowId, owner)
             call.respond(store.publishFlow(flowId).toTutorialFlow())
         }
+        get("/analytics") {
+            val owner = call.owner(auth)
+            val flow = store.assertFlowOwned(call.pathParam("flowId"), owner)
+            call.respond(store.getSummary(flow.flowId))
+        }
         post("/steps") {
             val owner = call.owner(auth)
             val flowId = call.pathParam("flowId")
@@ -185,6 +192,16 @@ private fun io.ktor.server.routing.Route.clientRoutes(store: GuideFlowStore) {
         val config = store.getPublishedConfig(project.projectId)
             ?: TutorialConfig(project.projectId, project.configVersion, emptyList())
         call.respond(config)
+    }
+
+    // SDK analytics upload — project-key auth, like config.
+    post("/client/events/batch") {
+        val rawKey = call.request.headers[PROJECT_KEY_HEADER]
+            ?: badRequest("missing_project_key", "Missing $PROJECT_KEY_HEADER header")
+        val project = store.findProjectByKeyHash(ProjectKeys.hash(rawKey))
+            ?: notFound("project_not_found", "No project matches the provided key")
+        val batch = call.receive<AnalyticsBatch>()
+        call.respond(AnalyticsBatchResponse(store.recordEvents(project.projectId, batch.events)))
     }
 }
 

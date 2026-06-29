@@ -1,6 +1,9 @@
 package com.guideflow.backend
 
+import com.guideflow.shared.AnalyticsEvent
+import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.CreateStepRequest
+import com.guideflow.shared.EventType
 import com.guideflow.shared.FlowStatus
 import com.guideflow.shared.StepType
 import com.guideflow.shared.TutorialConfig
@@ -54,6 +57,10 @@ interface GuideFlowStore {
 
     fun publishFlow(flowId: String): FlowRecord
     fun getPublishedConfig(projectId: String): TutorialConfig?
+
+    /** Store events (idempotent by eventId), update summaries, return accepted ids. */
+    fun recordEvents(projectId: String, events: List<AnalyticsEvent>): List<String>
+    fun getSummary(flowId: String): AnalyticsSummary
 }
 
 /**
@@ -66,6 +73,8 @@ class InMemoryStore : GuideFlowStore {
     private val projects = LinkedHashMap<String, ProjectRecord>()
     private val flows = LinkedHashMap<String, FlowRecord>()
     private val publishedConfigs = HashMap<String, TutorialConfig>()
+    private val summaries = HashMap<String, AnalyticsSummary>()
+    private val seenEvents = HashSet<String>() // ponytail: unbounded; fine for dev/in-memory
 
     override fun createProject(ownerUid: String, name: String): Pair<ProjectRecord, String> = synchronized(lock) {
         val rawKey = ProjectKeys.generate()
@@ -91,6 +100,29 @@ class InMemoryStore : GuideFlowStore {
 
     override fun findProjectByKeyHash(keyHash: String): ProjectRecord? = synchronized(lock) {
         projects.values.firstOrNull { it.projectKeyHash == keyHash }
+    }
+
+    override fun recordEvents(projectId: String, events: List<AnalyticsEvent>): List<String> = synchronized(lock) {
+        for (e in events) {
+            if (!seenEvents.add(e.eventId)) continue // already counted
+            var s = summaries[e.flowId] ?: AnalyticsSummary(e.flowId)
+            s = when (e.eventType) {
+                EventType.FLOW_STARTED -> s.copy(started = s.started + 1)
+                EventType.FLOW_COMPLETED -> s.copy(completed = s.completed + 1)
+                EventType.FLOW_SKIPPED -> s.copy(skipped = s.skipped + 1)
+                EventType.ANCHOR_MISSING -> s.copy(anchorMissing = s.anchorMissing + 1)
+                EventType.STEP_SHOWN -> e.stepId?.let { sid ->
+                    s.copy(stepViews = s.stepViews + (sid to ((s.stepViews[sid] ?: 0) + 1)))
+                } ?: s
+                EventType.STEP_COMPLETED -> s
+            }
+            summaries[e.flowId] = s
+        }
+        events.map { it.eventId }
+    }
+
+    override fun getSummary(flowId: String): AnalyticsSummary = synchronized(lock) {
+        summaries[flowId] ?: AnalyticsSummary(flowId)
     }
 
     override fun createFlow(projectId: String, flowKey: String, name: String): FlowRecord = synchronized(lock) {

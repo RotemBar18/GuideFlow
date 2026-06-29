@@ -1,9 +1,14 @@
 package com.guideflow.backend
 
 import com.google.cloud.firestore.DocumentSnapshot
+import com.google.cloud.firestore.FieldValue
 import com.google.cloud.firestore.Firestore
+import com.google.cloud.firestore.SetOptions
 import com.google.firebase.cloud.FirestoreClient
+import com.guideflow.shared.AnalyticsEvent
+import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.CreateStepRequest
+import com.guideflow.shared.EventType
 import com.guideflow.shared.FlowStatus
 import com.guideflow.shared.StepType
 import com.guideflow.shared.TutorialConfig
@@ -32,6 +37,8 @@ class FirestoreStore(
     private val flows get() = db.collection("flows")
     private val steps get() = db.collection("steps")
     private val publishedConfigs get() = db.collection("publishedConfigs")
+    private val events get() = db.collection("events")
+    private val summaries get() = db.collection("analyticsSummaries")
 
     // --- projects ------------------------------------------------------------
 
@@ -200,6 +207,63 @@ class FirestoreStore(
         val raw = doc.getString("json") ?: return null
         return runCatching { json.decodeFromString<TutorialConfig>(raw) }.getOrNull()
     }
+
+    // --- analytics -----------------------------------------------------------
+
+    override fun recordEvents(projectId: String, events: List<AnalyticsEvent>): List<String> {
+        for (e in events) {
+            val ref = this.events.document(e.eventId)
+            if (ref.get().get().exists()) continue // idempotent: counted already
+            // ponytail: 1 read + 2 writes per event; fine for MVP volume, batch a write if it grows.
+            ref.set(eventToMap(projectId, e)).get()
+            val incr = summaryIncrement(e)
+            if (incr.isNotEmpty()) {
+                summaries.document(e.flowId).set(mapOf("flowId" to e.flowId) + incr, SetOptions.merge()).get()
+            }
+        }
+        return events.map { it.eventId }
+    }
+
+    override fun getSummary(flowId: String): AnalyticsSummary {
+        val doc = summaries.document(flowId).get().get().takeIf { it.exists() } ?: return AnalyticsSummary(flowId)
+        @Suppress("UNCHECKED_CAST")
+        val views = (doc.get("stepViews") as? Map<String, Any?>)
+            ?.mapValues { (it.value as? Long ?: 0L).toInt() } ?: emptyMap()
+        return AnalyticsSummary(
+            flowId = flowId,
+            started = (doc.getLong("started") ?: 0).toInt(),
+            completed = (doc.getLong("completed") ?: 0).toInt(),
+            skipped = (doc.getLong("skipped") ?: 0).toInt(),
+            anchorMissing = (doc.getLong("anchorMissing") ?: 0).toInt(),
+            stepViews = views,
+        )
+    }
+
+    private fun summaryIncrement(e: AnalyticsEvent): Map<String, Any> = when (e.eventType) {
+        EventType.FLOW_STARTED -> mapOf("started" to FieldValue.increment(1))
+        EventType.FLOW_COMPLETED -> mapOf("completed" to FieldValue.increment(1))
+        EventType.FLOW_SKIPPED -> mapOf("skipped" to FieldValue.increment(1))
+        EventType.ANCHOR_MISSING -> mapOf("anchorMissing" to FieldValue.increment(1))
+        EventType.STEP_SHOWN -> e.stepId?.let { sid ->
+            mapOf("stepViews" to mapOf(sid to FieldValue.increment(1)))
+        } ?: emptyMap()
+        EventType.STEP_COMPLETED -> emptyMap()
+    }
+
+    private fun eventToMap(projectId: String, e: AnalyticsEvent): Map<String, Any?> = mapOf(
+        "eventId" to e.eventId,
+        "projectId" to projectId,
+        "flowId" to e.flowId,
+        "stepId" to e.stepId,
+        "eventType" to e.eventType.name,
+        "timestamp" to e.timestamp,
+        "userIdHash" to e.userIdHash,
+        "sessionId" to e.sessionId,
+        "appVersion" to e.appVersion,
+        "sdkVersion" to e.sdkVersion,
+        "androidVersion" to e.androidVersion,
+        "deviceModel" to e.deviceModel,
+    )
 
     // --- helpers -------------------------------------------------------------
 

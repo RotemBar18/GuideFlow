@@ -172,10 +172,13 @@ fun DetailHeader(
     onBack: () -> Unit,
     status: (@Composable () -> Unit)? = null,
     subtitle: String? = null,
+    action: (@Composable () -> Unit)? = null,
 ) {
     Column(Modifier.fillMaxWidth().background(Gf.card).padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onBack() }) {
-            Text("←  $backLabel", color = Gf.textMuted, fontSize = 12.sp)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Back to $backLabel", color = Gf.textMuted, fontSize = 12.sp, modifier = Modifier.clickable { onBack() })
+            Spacer(Modifier.weight(1f))
+            action?.invoke()
         }
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
