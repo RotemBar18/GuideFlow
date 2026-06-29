@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
 
         // Paste a real key returned by POST /api/projects to load the tour remotely.
         // Until then, refresh fails and the demo uses the hardcoded fallback above.
-        private const val PROJECT_KEY = "gf_a88184206e00247032e1657e4e1a3b60"
+        private const val PROJECT_KEY = "gf_42dbf36e28c81890a6b2aba336bef328"
     }
 }
 
