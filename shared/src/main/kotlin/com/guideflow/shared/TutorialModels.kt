@@ -33,6 +33,22 @@ data class TutorialStep(
     val body: String,
 )
 
+/**
+ * Per-flow visual customization. All fields have defaults, so older configs
+ * (and flows created before theming) deserialize unchanged.
+ */
+@Serializable
+data class FlowTheme(
+    val accentColor: String? = null,   // "#RRGGBB"; null = SDK default accent
+    val dimOpacity: Float = 0.6f,      // 0..1, spotlight/modal scrim darkness
+    val cornerRadius: Int = 14,        // dp for cards/bubbles
+    val nextLabel: String = "Next",
+    val skipLabel: String = "Skip",
+    val doneLabel: String = "Done",
+    val showProgress: Boolean = true,
+    val showSkip: Boolean = true,
+)
+
 @Serializable
 data class TutorialFlow(
     val id: String,
@@ -40,6 +56,7 @@ data class TutorialFlow(
     val name: String,
     val status: FlowStatus,
     val steps: List<TutorialStep> = emptyList(),
+    val theme: FlowTheme = FlowTheme(),
 )
 
 /** The single published configuration object downloaded by the SDK. */

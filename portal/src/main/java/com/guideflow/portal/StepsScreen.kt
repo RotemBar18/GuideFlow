@@ -66,6 +66,7 @@ fun StepsScreen(
     onAddStep: () -> Unit,
     onEditStep: (TutorialStep) -> Unit,
     onAnalytics: () -> Unit,
+    onAppearance: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var current by remember { mutableStateOf(flow) }
@@ -106,7 +107,12 @@ fun StepsScreen(
                 onBack = onBack,
                 status = { StatusPill(current.status) },
                 subtitle = if (current.status == FlowStatus.DRAFT) "Draft - publish to make it live." else "Live.",
-                action = { TextButton(onClick = onAnalytics) { Text("Analytics") } },
+                action = {
+                    Row {
+                        TextButton(onClick = onAppearance) { Text("Theme") }
+                        TextButton(onClick = onAnalytics) { Text("Analytics") }
+                    }
+                },
             )
         },
         bottomBar = {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,15 +21,19 @@ import com.guideflow.sdk.flow.ActiveFlowState
  */
 @Composable
 internal fun ModalFallback(state: ActiveFlowState) {
+    val theme = state.flow.theme
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f))
+            .background(Color.Black.copy(alpha = theme.dimOpacity))
             .consumeTaps()
             .testTag(GuideFlowOverlayTags.MODAL),
         contentAlignment = Alignment.Center,
     ) {
-        Card(modifier = Modifier.padding(32.dp).widthIn(max = 360.dp)) {
+        Card(
+            modifier = Modifier.padding(32.dp).widthIn(max = 360.dp),
+            shape = RoundedCornerShape(theme.cornerRadius.dp),
+        ) {
             StepControls(state, Modifier.padding(20.dp))
         }
     }

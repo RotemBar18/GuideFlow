@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,24 +30,29 @@ import com.guideflow.sdk.flow.ActiveFlowState
 internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier) {
     val coordinator = GuideFlow.coordinator
     val step = state.currentStep
+    val theme = state.flow.theme
     Column(modifier) {
         Text(step.title, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(6.dp))
         Text(step.body, style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(10.dp))
-        Text(
-            "Step ${state.currentStepIndex + 1} of ${state.totalSteps}",
-            style = MaterialTheme.typography.labelSmall,
-        )
+        if (theme.showProgress) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Step ${state.currentStepIndex + 1} of ${state.totalSteps}",
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
         Spacer(Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(
-                onClick = { coordinator.skip() },
-                modifier = Modifier.testTag(GuideFlowOverlayTags.SKIP),
-            ) { Text("Skip") }
+            if (theme.showSkip) {
+                TextButton(
+                    onClick = { coordinator.skip() },
+                    modifier = Modifier.testTag(GuideFlowOverlayTags.SKIP),
+                ) { Text(theme.skipLabel) }
+            }
             Spacer(Modifier.weight(1f))
             if (!state.isFirstStep) {
                 TextButton(
@@ -58,8 +64,9 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
             Button(
                 onClick = { coordinator.next() },
                 modifier = Modifier.testTag(GuideFlowOverlayTags.NEXT),
+                colors = ButtonDefaults.buttonColors(containerColor = theme.accentColorOrDefault()),
             ) {
-                Text(if (state.isLastStep) "Done" else "Next")
+                Text(if (state.isLastStep) theme.doneLabel else theme.nextLabel)
             }
         }
     }

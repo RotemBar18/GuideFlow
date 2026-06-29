@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,13 +31,14 @@ import com.guideflow.sdk.flow.ActiveFlowState
  */
 @Composable
 internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
+    val theme = state.flow.theme
     Box(Modifier.fillMaxSize().consumeTaps().testTag(GuideFlowOverlayTags.SPOTLIGHT)) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
         ) {
-            drawRect(color = Color.Black.copy(alpha = 0.72f))
+            drawRect(color = Color.Black.copy(alpha = theme.dimOpacity))
             val padPx = 8.dp.toPx()
             drawRoundRect(
                 color = Color.Transparent,
@@ -45,7 +47,7 @@ internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                     width = anchor.bounds.width + padPx * 2,
                     height = anchor.bounds.height + padPx * 2,
                 ),
-                cornerRadius = CornerRadius(14.dp.toPx()),
+                cornerRadius = CornerRadius(theme.cornerRadius.dp.toPx()),
                 blendMode = BlendMode.Clear,
             )
         }
@@ -54,6 +56,7 @@ internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
                 .fillMaxWidth(),
+            shape = RoundedCornerShape(theme.cornerRadius.dp),
         ) {
             StepControls(state, Modifier.padding(16.dp))
         }

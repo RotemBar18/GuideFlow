@@ -3,6 +3,8 @@ package com.guideflow.portal
 import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.CreateFlowRequest
 import com.guideflow.shared.CreateProjectRequest
+import com.guideflow.shared.FlowTheme
+import com.guideflow.shared.UpdateFlowRequest
 import com.guideflow.shared.CreateProjectResponse
 import com.guideflow.shared.CreateStepRequest
 import com.guideflow.shared.ProjectDto
@@ -78,6 +80,11 @@ class PortalApi(
 
     suspend fun getAnalytics(flowId: String, token: String?): AnalyticsSummary =
         http.get("$baseUrl/api/flows/$flowId/analytics") { authorize(token) }.body()
+
+    suspend fun updateFlowTheme(flowId: String, theme: FlowTheme, token: String?): TutorialFlow =
+        http.put("$baseUrl/api/flows/$flowId") {
+            authorize(token); contentType(ContentType.Application.Json); setBody(UpdateFlowRequest(theme = theme))
+        }.body()
 
     // --- steps ---
     suspend fun addStep(flowId: String, req: CreateStepRequest, token: String?): TutorialStep =

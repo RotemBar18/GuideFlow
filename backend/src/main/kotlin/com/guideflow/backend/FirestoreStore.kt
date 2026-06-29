@@ -10,6 +10,7 @@ import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.CreateStepRequest
 import com.guideflow.shared.EventType
 import com.guideflow.shared.FlowStatus
+import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.StepType
 import com.guideflow.shared.TutorialConfig
 import com.guideflow.shared.TutorialStep
@@ -96,7 +97,7 @@ class FirestoreStore(
     override fun getFlow(flowId: String): FlowRecord? =
         flows.document(flowId).get().get().takeIf { it.exists() }?.toFlowRecord(loadSteps(flowId))
 
-    override fun updateFlow(flowId: String, flowKey: String?, name: String?): FlowRecord? {
+    override fun updateFlow(flowId: String, flowKey: String?, name: String?, theme: FlowTheme?): FlowRecord? {
         val doc = flows.document(flowId).get().get().takeIf { it.exists() } ?: return null
         val current = doc.toFlowRecord(emptyList())
         if (flowKey != null && flowKey != current.flowKey) {
@@ -110,6 +111,7 @@ class FirestoreStore(
                 "flowKey" to (flowKey ?: current.flowKey),
                 "name" to (name ?: current.name),
                 "status" to draftedAgain(current.status).name,
+                "themeJson" to json.encodeToString(theme ?: current.theme),
             ),
         ).get()
         return getFlow(flowId)
@@ -308,6 +310,7 @@ class FirestoreStore(
         "flowKey" to flowKey,
         "name" to name,
         "status" to status.name,
+        "themeJson" to json.encodeToString(theme),
     )
 
     private fun DocumentSnapshot.toFlowRecord(steps: List<TutorialStep>) = FlowRecord(
@@ -317,6 +320,7 @@ class FirestoreStore(
         name = getString("name").orEmpty(),
         status = FlowStatus.valueOf(getString("status") ?: FlowStatus.DRAFT.name),
         steps = steps,
+        theme = getString("themeJson")?.let { runCatching { json.decodeFromString<FlowTheme>(it) }.getOrNull() } ?: FlowTheme(),
     )
 
     private fun TutorialStep.toMap(flowId: String): Map<String, Any?> = mapOf(

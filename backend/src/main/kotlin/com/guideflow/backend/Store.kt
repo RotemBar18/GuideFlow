@@ -5,6 +5,7 @@ import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.CreateStepRequest
 import com.guideflow.shared.EventType
 import com.guideflow.shared.FlowStatus
+import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.StepType
 import com.guideflow.shared.TutorialConfig
 import com.guideflow.shared.TutorialFlow
@@ -31,6 +32,7 @@ data class FlowRecord(
     val name: String,
     val status: FlowStatus,
     val steps: List<TutorialStep>,
+    val theme: FlowTheme = FlowTheme(),
 )
 
 /**
@@ -46,7 +48,7 @@ interface GuideFlowStore {
     fun createFlow(projectId: String, flowKey: String, name: String): FlowRecord
     fun listFlows(projectId: String): List<FlowRecord>
     fun getFlow(flowId: String): FlowRecord?
-    fun updateFlow(flowId: String, flowKey: String?, name: String?): FlowRecord?
+    fun updateFlow(flowId: String, flowKey: String?, name: String?, theme: FlowTheme?): FlowRecord?
     fun deleteFlow(flowId: String): Boolean
 
     fun addStep(flowId: String, req: CreateStepRequest): TutorialStep?
@@ -150,7 +152,7 @@ class InMemoryStore : GuideFlowStore {
         flows[flowId]
     }
 
-    override fun updateFlow(flowId: String, flowKey: String?, name: String?): FlowRecord? = synchronized(lock) {
+    override fun updateFlow(flowId: String, flowKey: String?, name: String?, theme: FlowTheme?): FlowRecord? = synchronized(lock) {
         val flow = flows[flowId] ?: return null
         if (flowKey != null && flowKey != flow.flowKey &&
             flows.values.any { it.projectId == flow.projectId && it.flowKey == flowKey }
@@ -160,6 +162,7 @@ class InMemoryStore : GuideFlowStore {
         val updated = flow.copy(
             flowKey = flowKey ?: flow.flowKey,
             name = name ?: flow.name,
+            theme = theme ?: flow.theme,
             // Editing a published flow returns it to draft until re-published.
             status = if (flow.status == FlowStatus.PUBLISHED) FlowStatus.DRAFT else flow.status,
         )
@@ -290,6 +293,7 @@ object ConfigCompiler {
                     name = flow.name,
                     status = FlowStatus.PUBLISHED,
                     steps = flow.steps.sortedBy { it.order },
+                    theme = flow.theme,
                 )
             },
         )

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                 .padding(horizontal = 16.dp)
                 .widthIn(max = 360.dp)
                 .testTag(GuideFlowOverlayTags.TOOLTIP),
+            shape = RoundedCornerShape(state.flow.theme.cornerRadius.dp),
         ) {
             StepControls(state, Modifier.padding(16.dp))
         }
