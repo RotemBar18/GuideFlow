@@ -1,0 +1,9 @@
+# Cloud Build upload ignore (gradle outputs are rebuilt inside the Dockerfile).
+**/build/
+.gradle/
+.kotlin/
+.idea/
+*.iml
+.git/
+guideflow_key.json
+**/google-services.json

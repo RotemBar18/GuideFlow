@@ -1,0 +1,5 @@
+<resources>
+    <!-- Compose draws its own UI; the activity theme only needs to be a valid
+         no-action-bar platform theme. -->
+    <style name="Theme.GuideFlowPortal" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
