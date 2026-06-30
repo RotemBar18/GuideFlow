@@ -3,10 +3,13 @@ package com.guideflow.sdk.compose
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import com.guideflow.sdk.api.GuideFlow
 import com.guideflow.sdk.flow.ActiveFlowState
 import com.guideflow.shared.StepType
@@ -45,9 +48,12 @@ private fun GuideFlowOverlay(state: ActiveFlowState) {
         }
     }
 
-    when {
-        step.type == StepType.MODAL || anchorMissing -> ModalFallback(state)
-        step.type == StepType.TOOLTIP -> TooltipOverlay(state, anchor!!)
-        step.type == StepType.SPOTLIGHT -> SpotlightOverlay(state, anchor!!)
+    val dir = if (state.activeTheme().rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+    CompositionLocalProvider(LocalLayoutDirection provides dir) {
+        when {
+            step.type == StepType.MODAL || anchorMissing -> ModalFallback(state)
+            step.type == StepType.TOOLTIP -> TooltipOverlay(state, anchor!!)
+            step.type == StepType.SPOTLIGHT -> SpotlightOverlay(state, anchor!!)
+        }
     }
 }

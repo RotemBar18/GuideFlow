@@ -19,13 +19,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,7 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.Gf
@@ -45,7 +47,7 @@ import com.guideflow.shared.TutorialFlow
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private val SWATCHES = listOf("#4F5BD5", "#0F9D58", "#D64545", "#B45309", "#7C3AED", "#11141B")
+private val ACCENT_SWATCHES = listOf("#4F5BD5", "#0F9D58", "#D64545", "#B45309", "#7C3AED", "#11141B")
 
 private fun parseColor(hex: String): Color =
     runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Gf.primary)
@@ -69,10 +71,11 @@ fun AppearanceScreen(
 
     val cur = if (editingDark) dark else light
     fun set(t: FlowTheme) { if (editingDark) dark = t else light = t }
+    // Layout direction is a flow property, not a colour-mode one — keep both variants in sync.
+    fun setRtl(rtl: Boolean) { light = light.copy(rtl = rtl); dark = dark.copy(rtl = rtl) }
 
     val accentColor = parseColor(cur.accentColor ?: "#4F5BD5")
     val buttonTextColor = parseColorOrNull(cur.buttonTextColor) ?: Color.White
-    // Card + text always follow the device theme; the preview mirrors the variant being edited.
     val cardColor = if (editingDark) Color(0xFF1B1F27) else Color.White
     val txtColor = if (editingDark) Color.White else Gf.ink
 
@@ -103,76 +106,89 @@ fun AppearanceScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // Pinned: variant switcher + live preview (stays visible while you scroll the controls).
+            // Pinned: variant switcher + live preview (stays visible while you scroll).
             Column(
                 Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F3)).padding(3.dp)) {
-                    listOf(false to "Light", true to "Dark").forEach { (isDark, label) ->
-                        val sel = editingDark == isDark
-                        Box(
-                            Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
-                                .background(if (sel) Gf.primary else Color.Transparent)
-                                .clickable { editingDark = isDark }.padding(vertical = 9.dp),
-                            contentAlignment = Alignment.Center,
-                        ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp) }
-                    }
-                }
-                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.doneLabel, cur.skipLabel, cur.showProgress, cur.showSkip)
+                TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
+                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.nextLabel, cur.skipLabel, cur.showProgress, cur.showSkip, cur.rtl)
             }
 
-            // Scrollable controls.
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Text(
-                    "Editing the ${if (editingDark) "DARK" else "LIGHT"} design, shown automatically based on the device theme. Card and text follow the device; you set the accent and button-text color.",
+                    "Colours below apply to the ${if (editingDark) "DARK" else "LIGHT"} design; the SDK picks one based on the device theme. Card and text always follow the device.",
                     color = Gf.textMuted, fontSize = 11.5.sp,
                 )
-                SectionLabel("Accent color")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SWATCHES.forEach { hex ->
-                    Box(
-                        Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(parseColor(hex))
-                            .border(if (hex.equals(cur.accentColor, true)) 3.dp else 0.dp, Gf.ink, RoundedCornerShape(8.dp))
-                            .clickable { set(cur.copy(accentColor = hex)) },
-                    )
-                }
+
+                // ---- Layout (whole flow) ----
+                SectionLabel("Layout direction")
+                TwoWaySegment("LTR", "RTL", cur.rtl) { setRtl(it) }
+                Text("Applies to both light and dark.", color = Gf.textFaint, fontSize = 11.sp)
+
+                // ---- The Next/Done button ----
+                SectionLabel("Button — Next / Done")
+                Text(
+                    "One button: it reads your Next label on every step and your Done label on the last step.",
+                    color = Gf.textMuted, fontSize = 11.5.sp,
+                )
+                Text("Accent", color = Gf.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                SwatchRow(ACCENT_SWATCHES, cur.accentColor) { set(cur.copy(accentColor = it)) }
+                OutlinedTextField(cur.accentColor ?: "", { set(cur.copy(accentColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Accent hex") }, modifier = Modifier.fillMaxWidth())
+                Text("Button text", color = Gf.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                SwatchRow(listOf("#FFFFFF", "#11141B"), cur.buttonTextColor) { set(cur.copy(buttonTextColor = it)) }
+                OutlinedTextField(cur.buttonTextColor ?: "", { set(cur.copy(buttonTextColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Button text hex (blank = white)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(cur.nextLabel, { set(cur.copy(nextLabel = it)) }, singleLine = true, label = { Text("Next label") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(cur.doneLabel, { set(cur.copy(doneLabel = it)) }, singleLine = true, label = { Text("Done label (last step)") }, modifier = Modifier.fillMaxWidth())
+
+                // ---- The Skip button ----
+                SectionLabel("Button — Skip")
+                ToggleRow("Show skip button", cur.showSkip) { set(cur.copy(showSkip = it)) }
+                OutlinedTextField(cur.skipLabel, { set(cur.copy(skipLabel = it)) }, singleLine = true, label = { Text("Skip label") }, modifier = Modifier.fillMaxWidth())
+
+                // ---- The card / overlay ----
+                SectionLabel("Card & overlay")
+                Text("Corner radius  ${cur.cornerRadius}dp", color = Gf.textSecondary, fontSize = 12.sp)
+                Slider(value = cur.cornerRadius.toFloat(), onValueChange = { set(cur.copy(cornerRadius = it.roundToInt())) }, valueRange = 0f..28f)
+                Text("Dim opacity  ${(cur.dimOpacity * 100).roundToInt()}%", color = Gf.textSecondary, fontSize = 12.sp)
+                Slider(value = cur.dimOpacity, onValueChange = { set(cur.copy(dimOpacity = it)) }, valueRange = 0.2f..0.9f)
+
+                // ---- Progress ----
+                SectionLabel("Progress")
+                ToggleRow("Show step count (Step 1 of N)", cur.showProgress) { set(cur.copy(showProgress = it)) }
+                Spacer(Modifier.height(8.dp))
             }
-            OutlinedTextField(
-                value = cur.accentColor ?: "", onValueChange = { set(cur.copy(accentColor = it.ifBlank { null })) },
-                singleLine = true, label = { Text("Accent hex") }, modifier = Modifier.fillMaxWidth(),
+        }
+    }
+}
+
+@Composable
+private fun TwoWaySegment(left: String, right: String, rightSelected: Boolean, onSelect: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F3)).padding(3.dp)) {
+        listOf(false to left, true to right).forEach { (isRight, label) ->
+            val sel = rightSelected == isRight
+            Box(
+                Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
+                    .background(if (sel) Gf.primary else Color.Transparent)
+                    .clickable { onSelect(isRight) }.padding(vertical = 9.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp) }
+        }
+    }
+}
+
+@Composable
+private fun SwatchRow(options: List<String>, selected: String?, onPick: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.forEach { hex ->
+            Box(
+                Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(parseColor(hex))
+                    .border(if (hex.equals(selected, true)) 3.dp else 1.dp, Gf.borderStrong, RoundedCornerShape(8.dp))
+                    .clickable { onPick(hex) },
             )
-
-            SectionLabel("Dim opacity  ${(cur.dimOpacity * 100).roundToInt()}%")
-            Slider(value = cur.dimOpacity, onValueChange = { set(cur.copy(dimOpacity = it)) }, valueRange = 0.2f..0.9f)
-
-            SectionLabel("Corner radius  ${cur.cornerRadius}dp")
-            Slider(value = cur.cornerRadius.toFloat(), onValueChange = { set(cur.copy(cornerRadius = it.roundToInt())) }, valueRange = 0f..28f)
-
-            SectionLabel("Button text color")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("#FFFFFF", "#11141B").forEach { hex ->
-                    Box(
-                        Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(parseColor(hex))
-                            .border(if (hex.equals(cur.buttonTextColor, true)) 3.dp else 1.dp, Gf.borderStrong, RoundedCornerShape(8.dp))
-                            .clickable { set(cur.copy(buttonTextColor = hex)) },
-                    )
-                }
-            }
-            OutlinedTextField(value = cur.buttonTextColor ?: "", onValueChange = { set(cur.copy(buttonTextColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Button text hex (blank = white)") }, modifier = Modifier.fillMaxWidth())
-
-            SectionLabel("Button labels")
-            OutlinedTextField(value = cur.nextLabel, onValueChange = { set(cur.copy(nextLabel = it)) }, singleLine = true, label = { Text("Next") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = cur.skipLabel, onValueChange = { set(cur.copy(skipLabel = it)) }, singleLine = true, label = { Text("Skip") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = cur.doneLabel, onValueChange = { set(cur.copy(doneLabel = it)) }, singleLine = true, label = { Text("Done (last step)") }, modifier = Modifier.fillMaxWidth())
-
-            ToggleRow("Show step progress", cur.showProgress) { set(cur.copy(showProgress = it)) }
-            ToggleRow("Show skip button", cur.showSkip) { set(cur.copy(showSkip = it)) }
-            Spacer(Modifier.height(8.dp))
-            }
         }
     }
 }
@@ -188,29 +204,31 @@ private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit
 @Composable
 private fun ThemedPreview(
     accent: Color, buttonTextColor: Color, cardColor: Color, textColor: Color, dim: Float, corner: Int,
-    doneLabel: String, skipLabel: String, showProgress: Boolean, showSkip: Boolean,
+    nextLabel: String, skipLabel: String, showProgress: Boolean, showSkip: Boolean, rtl: Boolean,
 ) {
     Box(
         Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)),
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)))
-        Column(
-            Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(16.dp),
-        ) {
-            Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontSize = 12.sp)
-            if (showProgress) {
-                Spacer(Modifier.height(8.dp))
-                Text("Step 1 of 3", color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (showSkip) Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
-                Spacer(Modifier.weight(1f))
-                Box(
-                    Modifier.clip(RoundedCornerShape(10.dp)).background(accent).padding(horizontal = 18.dp, vertical = 8.dp),
-                ) { Text(doneLabel, color = buttonTextColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+        CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            Column(
+                Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(16.dp),
+            ) {
+                Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontSize = 12.sp)
+                if (showProgress) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Step 1 of 3", color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (showSkip) Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier.clip(RoundedCornerShape(10.dp)).background(accent).padding(horizontal = 18.dp, vertical = 8.dp),
+                    ) { Text(nextLabel, color = buttonTextColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                }
             }
         }
     }
