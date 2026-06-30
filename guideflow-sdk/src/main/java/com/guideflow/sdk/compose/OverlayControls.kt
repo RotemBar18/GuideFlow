@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.guideflow.sdk.api.GuideFlow
 import com.guideflow.sdk.flow.ActiveFlowState
+import com.guideflow.shared.progressText
 
 /**
  * Title, body, step progress, and the Skip / Back / Next(Done) controls shared by
@@ -46,7 +47,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
         if (theme.showProgress) {
             Spacer(Modifier.height(10.dp))
             Text(
-                "Step ${state.currentStepIndex + 1} of ${state.totalSteps}",
+                theme.progressText(state.currentStepIndex + 1, state.totalSteps),
                 style = MaterialTheme.typography.labelSmall,
             )
         }

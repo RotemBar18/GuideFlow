@@ -49,9 +49,14 @@ data class FlowTheme(
     val backLabel: String = "Back",
     val skipLabel: String = "Skip",
     val doneLabel: String = "Done",
+    val progressFormat: String = "Step {current} of {total}", // {current}/{total} placeholders
     val showProgress: Boolean = true,
     val showSkip: Boolean = true,
 )
+
+/** Renders the step counter from [FlowTheme.progressFormat], substituting the placeholders. */
+fun FlowTheme.progressText(current: Int, total: Int): String =
+    progressFormat.replace("{current}", current.toString()).replace("{total}", total.toString())
 // Step text follows the device theme; backgroundColor overrides the card surface when set.
 
 @Serializable

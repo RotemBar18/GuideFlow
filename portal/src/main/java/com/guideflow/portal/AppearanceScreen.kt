@@ -44,6 +44,7 @@ import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.TutorialFlow
+import com.guideflow.shared.progressText
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -112,7 +113,7 @@ fun AppearanceScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
-                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.nextLabel, cur.skipLabel, cur.showProgress, cur.showSkip, cur.rtl)
+                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.nextLabel, cur.skipLabel, cur.progressText(1, 3), cur.showProgress, cur.showSkip, cur.rtl)
             }
 
             Column(
@@ -166,7 +167,10 @@ fun AppearanceScreen(
 
                 // ---- Progress ----
                 SectionLabel("Progress")
-                ToggleRow("Show step count (Step 1 of N)", cur.showProgress) { set(cur.copy(showProgress = it)) }
+                ToggleRow("Show step counter", cur.showProgress) { set(cur.copy(showProgress = it)) }
+                OutlinedTextField(cur.progressFormat, { set(cur.copy(progressFormat = it)) }, singleLine = true,
+                    label = { Text("Counter format") }, modifier = Modifier.fillMaxWidth())
+                Text("Use {current} and {total} as placeholders, e.g. שלב {current} מתוך {total}", color = Gf.textFaint, fontSize = 11.sp)
                 Spacer(Modifier.height(8.dp))
             }
         }
@@ -212,7 +216,7 @@ private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit
 @Composable
 private fun ThemedPreview(
     accent: Color, buttonTextColor: Color, cardColor: Color, textColor: Color, dim: Float, corner: Int,
-    nextLabel: String, skipLabel: String, showProgress: Boolean, showSkip: Boolean, rtl: Boolean,
+    nextLabel: String, skipLabel: String, progressText: String, showProgress: Boolean, showSkip: Boolean, rtl: Boolean,
 ) {
     Box(
         Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)),
@@ -230,7 +234,7 @@ private fun ThemedPreview(
                 Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontSize = 12.sp)
                 if (showProgress) {
                     Spacer(Modifier.height(8.dp))
-                    Text("Step 1 of 3", color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)
+                    Text(progressText, color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

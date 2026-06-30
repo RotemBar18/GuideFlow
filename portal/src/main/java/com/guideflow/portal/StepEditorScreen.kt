@@ -51,6 +51,7 @@ import com.guideflow.portal.ui.typeNeedsAnchor
 import com.guideflow.shared.CreateStepRequest
 import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.StepType
+import com.guideflow.shared.progressText
 import com.guideflow.shared.TutorialFlow
 import com.guideflow.shared.TutorialStep
 import com.guideflow.shared.UpdateStepRequest
@@ -323,7 +324,7 @@ private fun PreviewCard(
         }
         if (theme.showProgress) {
             Spacer(Modifier.height(8.dp))
-            Text("Step ${stepIndex + 1} of $totalSteps", color = textColor.copy(alpha = 0.55f), fontSize = 10.sp)
+            Text(theme.progressText(stepIndex + 1, totalSteps), color = textColor.copy(alpha = 0.55f), fontSize = 10.sp)
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
