@@ -143,7 +143,9 @@ fun AppearanceScreen(
                     color = Gf.textMuted, fontSize = 11.5.sp,
                 )
                 Text("Accent", color = Gf.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                SwatchRow(ACCENT_SWATCHES, cur.accentColor) { set(cur.copy(accentColor = it)) }
+                Box(Modifier.guideFlowAnchor("portal_appearance_accent")) {
+                    SwatchRow(ACCENT_SWATCHES, cur.accentColor) { set(cur.copy(accentColor = it)) }
+                }
                 OutlinedTextField(cur.accentColor ?: "", { set(cur.copy(accentColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Accent hex") }, modifier = Modifier.fillMaxWidth())
                 Text("Button text", color = Gf.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 SwatchRow(listOf("#FFFFFF", "#11141B"), cur.buttonTextColor) { set(cur.copy(buttonTextColor = it)) }
@@ -174,7 +176,7 @@ fun AppearanceScreen(
 
                 // ---- Typography ----
                 SectionDivider()
-                SectionLabel("Text size")
+                SectionLabel("Text size", Modifier.guideFlowAnchor("portal_appearance_textsize"))
                 Text("Font follows the host app's theme.", color = Gf.textFaint, fontSize = 11.sp)
                 Text("Title size  ${cur.titleSize}sp", color = Gf.textSecondary, fontSize = 12.sp)
                 Slider(value = cur.titleSize.toFloat(), onValueChange = { set(cur.copy(titleSize = it.roundToInt())) }, valueRange = 12f..30f)

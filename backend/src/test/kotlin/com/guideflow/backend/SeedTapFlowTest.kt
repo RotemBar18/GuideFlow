@@ -170,8 +170,10 @@ class SeedTapFlowTest {
             // Appearance
             Triple(StepType.TOOLTIP, "portal_appearance", Triple("Theme this flow", "Tap Theme to open the appearance editor.", true)),
             Triple(StepType.SPOTLIGHT, "portal_appearance_lightdark", Triple("Light and dark", "Design a separate look for light and dark mode. The SDK picks the right one on each device.", false)),
-            Triple(StepType.SPOTLIGHT, "portal_appearance_preview", Triple("Live theme preview", "Everything updates here instantly: accent colour, corner radius, right-to-left, button labels, the step counter, and text size.", false)),
-            Triple(StepType.MODAL, null, Triple("Per-flow theming", "Each flow carries its own theme, so a promo can look different from onboarding. The font follows the host app.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_appearance_preview", Triple("Live theme preview", "Everything updates here instantly: accent colour, corner radius, right-to-left, button labels, and the step counter.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_appearance_accent", Triple("Brand colour", "Set the accent used on the action button. The editor scrolled here on its own to show a control below the fold.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_appearance_textsize", Triple("Text size", "Tune the title and body text size. The font itself follows the host app.", false)),
+            Triple(StepType.MODAL, null, Triple("Per-flow theming", "Each flow carries its own theme, so a promo can look different from onboarding.", false)),
             Triple(StepType.TOOLTIP, "portal_appearance_back", Triple("Back to steps", "Tap back to return.", true)),
             // Analytics
             Triple(StepType.TOOLTIP, "portal_analytics", Triple("See analytics", "Tap Analytics to see how real users move through this flow.", true)),

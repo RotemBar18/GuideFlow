@@ -1,8 +1,13 @@
 package com.guideflow.sdk.compose
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -12,31 +17,43 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import com.guideflow.sdk.api.GuideFlow
+import kotlinx.coroutines.delay
 
 /**
  * Registers the composable as a GuideFlow anchor under [key].
  *
- * Tracks the element's bounds in root coordinates across layout changes and
- * removes the anchor when the composable leaves composition.
- *
- * When the active step targets this anchor and is `advanceOnTap`, a tap on the
- * element advances the flow. The tap is observed in the Initial pass without being
- * consumed, so the element's own click handler still fires (e.g. navigation). The
- * overlay leaves this element uncovered (see HoleScrim) so it actually gets the tap.
+ * Tracks the element's bounds in root coordinates, removes the anchor when the
+ * composable leaves composition, and:
+ *  - when the active step targets this anchor, asks the nearest scrollable parent to
+ *    scroll the element into view, so a step can point at a control below the fold;
+ *  - when that step is `advanceOnTap`, observes a tap (Initial pass, non-consuming) and
+ *    advances the flow while the element's own onClick still runs.
  */
+@OptIn(ExperimentalFoundationApi::class)
 fun Modifier.guideFlowAnchor(key: String): Modifier = composed {
     val anchors = GuideFlow.anchors
     DisposableEffect(key) {
         onDispose { anchors.remove(key) }
     }
     val active by GuideFlow.coordinator.activeFlow.collectAsState()
-    val advanceHere = active?.currentStep?.let { it.advanceOnTap && it.anchorKey == key } ?: false
+    val step = active?.currentStep
+    val isTarget = step?.anchorKey == key
+    val advanceHere = isTarget && step?.advanceOnTap == true
 
-    val base = onGloballyPositioned { coordinates ->
-        if (coordinates.isAttached) {
-            anchors.update(key, coordinates.boundsInRoot())
+    val requester = remember { BringIntoViewRequester() }
+    LaunchedEffect(isTarget) {
+        if (isTarget) {
+            delay(120) // let the (possibly just-navigated) screen lay out first
+            runCatching { requester.bringIntoView() }
         }
     }
+
+    val base = Modifier
+        .bringIntoViewRequester(requester)
+        .onGloballyPositioned { coordinates ->
+            if (coordinates.isAttached) anchors.update(key, coordinates.boundsInRoot())
+        }
+
     if (!advanceHere) {
         base
     } else {

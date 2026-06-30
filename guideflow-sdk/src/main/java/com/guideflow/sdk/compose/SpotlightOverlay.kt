@@ -2,10 +2,12 @@ package com.guideflow.sdk.compose
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.guideflow.sdk.anchor.AnchorInfo
@@ -26,7 +29,8 @@ import com.guideflow.sdk.flow.ActiveFlowState
 
 /**
  * Dims the whole screen and punches a transparent, rounded cutout over the anchor
- * so the highlighted element shows through. Controls sit in a card at the bottom.
+ * so the highlighted element shows through. The controls card sits opposite the
+ * anchor (top when the element is low, bottom otherwise) so it never covers it.
  *
  * The cutout uses [BlendMode.Clear], which requires the canvas to render into an
  * offscreen layer ([CompositingStrategy.Offscreen]).
@@ -34,7 +38,10 @@ import com.guideflow.sdk.flow.ActiveFlowState
 @Composable
 internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
     val theme = state.activeTheme()
-    Box(Modifier.fillMaxSize().testTag(GuideFlowOverlayTags.SPOTLIGHT)) {
+    BoxWithConstraints(Modifier.fillMaxSize().testTag(GuideFlowOverlayTags.SPOTLIGHT)) {
+        val screenHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
+        // Element low on screen -> card at top, so the highlighted element stays visible.
+        val cardAtTop = anchor.bounds.center.y > screenHeightPx * 0.55f
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -59,8 +66,8 @@ internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
         val bg = theme.backgroundColorOrNull()
         Card(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
+                .align(if (cardAtTop) Alignment.TopCenter else Alignment.BottomCenter)
+                .then(if (cardAtTop) Modifier.statusBarsPadding() else Modifier.navigationBarsPadding())
                 .padding(16.dp)
                 .fillMaxWidth(),
             shape = RoundedCornerShape(theme.cornerRadius.dp),
