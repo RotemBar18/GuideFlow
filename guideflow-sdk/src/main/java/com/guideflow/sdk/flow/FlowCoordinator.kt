@@ -1,6 +1,7 @@
 package com.guideflow.sdk.flow
 
 import com.guideflow.sdk.api.GuideFlowListener
+import com.guideflow.sdk.api.GuideFlowLog
 import com.guideflow.sdk.api.StopReason
 import com.guideflow.shared.EventType
 import com.guideflow.shared.TutorialFlow
@@ -70,6 +71,10 @@ internal class FlowCoordinator(
     /** Notify the listener that the current step's anchor could not be found. */
     fun notifyAnchorMissing(anchorKey: String) {
         val state = _activeFlow.value ?: return
+        GuideFlowLog.w(
+            "anchor \"$anchorKey\" not on screen for flow \"${state.flow.flowKey}\" (step ${state.currentStepIndex + 1}); " +
+                "showing modal fallback. Add Modifier.guideFlowAnchor(\"$anchorKey\") to the target composable.",
+        )
         listener?.onAnchorMissing(state.flow.flowKey, anchorKey)
         recordEvent(EventType.ANCHOR_MISSING, state.flow.id, state.currentStep.id)
     }

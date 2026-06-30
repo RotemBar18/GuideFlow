@@ -164,6 +164,14 @@ sealed class GuideFlowError {        // reported to the listener, never thrown a
 enum class StopReason { MANUAL, COMPLETED, SKIPPED }
 ```
 
+### Error handling
+
+The SDK never throws at the host app. A developer learns what went wrong through three channels:
+
+- **Return value** — `startFlow` and `refreshConfig` return a `Result`; a wrong flow key gives `Result.failure(FlowNotFound)`.
+- **Listener** — `GuideFlowListener.onError(...)` receives typed errors (`FlowNotFound`, `InvalidConfig`, `NetworkError`, `NotInitialized`), and `onAnchorMissing(flowKey, anchorKey)` fires when a step's anchor is not on screen (the overlay then shows the modal fallback instead of failing).
+- **Logcat** — set `GuideFlowConfig(debugLogging = true)` and the SDK logs actionable messages under the tag `GuideFlow`, for example a wrong flow key prints the known keys, and a missing anchor prints which `guideFlowAnchor(...)` to add. Logging is off by default, so release builds stay quiet.
+
 ## Inner functions and backend endpoints
 
 ### SDK internals (package `com.guideflow.sdk`)

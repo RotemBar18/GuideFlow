@@ -51,6 +51,8 @@ object GuideFlow {
      */
     fun initialize(context: Context, projectKey: String, config: GuideFlowConfig) {
         this.projectKey = projectKey
+        GuideFlowLog.enabled = config.debugLogging
+        GuideFlowLog.d("initialize(projectKey=$projectKey, baseUrl=${config.baseUrl})")
 
         configClient?.close()
         val client = ConfigClient(config.baseUrl)
@@ -69,6 +71,8 @@ object GuideFlow {
         scope.launch {
             repo.loadCached()
             repo.refresh(projectKey)
+                .onSuccess { GuideFlowLog.d("config loaded; flow keys=${availableFlows().map { it.flowKey }}") }
+                .onFailure { GuideFlowLog.w("config refresh failed: ${it.message}; using cached/local flows if any") }
         }
     }
 
@@ -104,9 +108,14 @@ object GuideFlow {
 
     /** Fetch the latest published config from the backend. */
     suspend fun refreshConfig(): Result<Unit> {
-        val repo = repository ?: return Result.failure(GuideFlowException(GuideFlowError.NotInitialized))
+        val repo = repository ?: run {
+            GuideFlowLog.w("refreshConfig() before initialize(): call GuideFlow.initialize(...) first")
+            return Result.failure(GuideFlowException(GuideFlowError.NotInitialized))
+        }
         val key = projectKey ?: return Result.failure(GuideFlowException(GuideFlowError.NotInitialized))
         return repo.refresh(key)
+            .onSuccess { GuideFlowLog.d("refreshConfig() ok; flow keys=${availableFlows().map { it.flowKey }}") }
+            .onFailure { GuideFlowLog.w("refreshConfig() failed: ${it.message}") }
     }
 
     /**
@@ -115,19 +124,26 @@ object GuideFlow {
      */
     fun startFlow(flowKey: String): Result<Unit> {
         // Remote config wins per key; local flows fill in any key remote doesn't have.
-        val remote = repository?.currentFlows().orEmpty()
-        val flow = remote.firstOrNull { it.flowKey == flowKey }
-            ?: localFlows.firstOrNull { it.flowKey == flowKey }
+        val all = availableFlows()
+        val flow = all.firstOrNull { it.flowKey == flowKey }
         if (flow == null) {
             val error = GuideFlowError.FlowNotFound(flowKey)
+            GuideFlowLog.w(
+                "startFlow(\"$flowKey\") failed: no such flow. Known keys=${all.map { it.flowKey }}. " +
+                    "Check the flow key matches a PUBLISHED flow (or one passed to loadLocalFlows), " +
+                    if (all.isEmpty()) "and that refreshConfig() has finished." else "and that the spelling matches.",
+            )
             listener?.onError(error)
             return Result.failure(GuideFlowException(error))
         }
         FlowValidator.validate(flow)?.let { error ->
+            GuideFlowLog.w("startFlow(\"$flowKey\") failed: invalid flow ($error)")
             listener?.onError(error)
             return Result.failure(GuideFlowException(error))
         }
         return coordinator.start(flow)
+            .onSuccess { GuideFlowLog.d("startFlow(\"$flowKey\")") }
+            .onFailure { GuideFlowLog.w("startFlow(\"$flowKey\") not started: ${it.message}") }
     }
 
     /** Stop the active flow, if any. */
