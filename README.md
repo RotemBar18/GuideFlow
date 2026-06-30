@@ -332,45 +332,10 @@ GuideFlow.startFlow("budget_tutorial")    // run a published tutorial
 
 That is the whole integration. Open the **portal app**, sign in, create a project, author a flow, and publish; the host app picks it up on the next `refreshConfig()`.
 
-## Running the whole stack yourself (optional)
-
-Only needed if you want to run your own backend instead of the hosted one (for example to grade or extend the project):
-
-```bash
-# Backend in dev mode (in-memory store, no auth)
-./gradlew :backend:run
-# Backend with Firebase (Firestore + token verification)
-GUIDEFLOW_FIREBASE_CREDENTIALS="/path/to/serviceAccount.json" ./gradlew :backend:run
-
-# Apps (Android Studio): run :portal to author, run :app to see the SDK
-# If you run your own backend, set baseUrl accordingly in the app/portal.
-```
-
-Deploy your own backend to Google Cloud Run:
-
-```bash
-gcloud run deploy guideflow-backend --source . --region me-west1 --allow-unauthenticated
-```
-
-On Cloud Run the backend uses Application Default Credentials, so no key file is shipped. See [docs/documentation.md](docs/documentation.md) for details.
-
 ## Tech stack
 
 Kotlin, Jetpack Compose, Ktor (client and server), kotlinx.serialization, DataStore, Firebase Authentication (Google Sign-In), Firebase Admin SDK, Cloud Firestore, Google Cloud Run, Gradle Kotlin DSL.
 
-## Tests
-
-- **SDK unit (JVM)**: `FlowCoordinatorTest` (start, next, back, skip, complete, sort-by-order, already-active guard) and `ConfigRepositoryTest` (refresh success, refresh failure keeps previous, 304 not-modified, cache disabled).
-- **SDK UI (instrumented, needs a device/emulator)**: `OverlayUiTest` (tooltip/spotlight/modal render, next advances, skip closes, done completes, missing-anchor modal fallback).
-- **Backend (JVM, in-memory store)**: `BackendTest` (create project + raw key, publish + validation of empty flow and anchor-less tooltip, client config, config version 304, unknown key 404, analytics batch updates summary). `FirestoreLiveTest` is a live create/publish/fetch round-trip, skipped unless Firebase credentials are set.
-
-```bash
-# Unit/integration tests
-./gradlew :guideflow-sdk:testDebugUnitTest :backend:test
-# UI tests (device/emulator connected)
-./gradlew :guideflow-sdk:connectedDebugAndroidTest
-```
-
 ## License
 
-Course project (educational).
+MIT. See [LICENSE](LICENSE).

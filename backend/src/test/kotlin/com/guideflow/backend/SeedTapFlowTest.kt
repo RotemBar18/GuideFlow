@@ -152,21 +152,36 @@ class SeedTapFlowTest {
 
         // (type, anchorKey, title, body, advanceOnTap). advanceOnTap drives screen changes.
         val steps = listOf(
-            Triple(StepType.MODAL, null as String?, Triple("Welcome to GuideFlow", "This quick tour shows how to build a tutorial. Tap Next.", false)),
-            Triple(StepType.SPOTLIGHT, "portal_new_project", Triple("Projects", "Each app you onboard is a project with its own SDK key.", false)),
-            Triple(StepType.TOOLTIP, "portal_project_card", Triple("Open a project", "Tap a project to see its tutorials.", true)),
-            Triple(StepType.SPOTLIGHT, "portal_new_flow", Triple("Flows", "A flow is one tutorial: an ordered list of steps.", false)),
-            Triple(StepType.TOOLTIP, "portal_flow_menu", Triple("Manage flows", "Rename, duplicate, or delete a flow from this menu.", false)),
+            // Projects
+            Triple(StepType.MODAL, null as String?, Triple("Welcome to GuideFlow", "This guided tour was built with GuideFlow itself. It walks you through authoring a tutorial from start to finish.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_new_project", Triple("Projects", "Each app you onboard is a project. It gets a one-time SDK key you paste into your app's code.", false)),
+            Triple(StepType.TOOLTIP, "portal_project_card", Triple("Open a project", "A project holds all of an app's tutorials. Tap one to open it.", true)),
+            // Flows
+            Triple(StepType.SPOTLIGHT, "portal_new_flow", Triple("Flows", "A flow is one tutorial: an ordered list of steps. A project can have many.", false)),
+            Triple(StepType.TOOLTIP, "portal_flow_menu", Triple("Manage a flow", "This menu renames a flow, duplicates it (perfect for a translated or right-to-left copy), or deletes it.", false)),
             Triple(StepType.TOOLTIP, "portal_flow_card", Triple("Open a flow", "Tap a flow to edit its steps.", true)),
-            Triple(StepType.SPOTLIGHT, "portal_add_step", Triple("Add steps", "Steps come in three styles: tooltip, spotlight, and modal.", false)),
-            Triple(StepType.TOOLTIP, "portal_appearance", Triple("Theme it", "Tap Theme to style this flow.", true)),
-            Triple(StepType.SPOTLIGHT, "portal_appearance_preview", Triple("Live preview", "Colours, RTL, labels, and text size, with light and dark, shown live as you edit.", false)),
-            Triple(StepType.TOOLTIP, "portal_appearance_back", Triple("Go back", "Tap back to return to the steps.", true)),
-            Triple(StepType.TOOLTIP, "portal_analytics", Triple("See analytics", "Tap Analytics to view how users move through the flow.", true)),
-            Triple(StepType.SPOTLIGHT, "portal_analytics_hero", Triple("Completion", "Completion rate, per-step views, and skips, all from real devices.", false)),
-            Triple(StepType.TOOLTIP, "portal_analytics_back", Triple("Go back", "Tap back to return to the steps.", true)),
-            Triple(StepType.SPOTLIGHT, "portal_publish", Triple("Publish", "Publish to push the tutorial live to your app, no app release needed.", false)),
-            Triple(StepType.MODAL, null, Triple("You're set", "That's GuideFlow. Now build your own tutorial.", false)),
+            // Steps + step editor
+            Triple(StepType.MODAL, null, Triple("The steps list", "Each row here is one step, played in order. You can reorder, edit, or add. Let's open the step editor.", false)),
+            Triple(StepType.TOOLTIP, "portal_add_step", Triple("Add a step", "Tap Add step to open the editor.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_step_type", Triple("Step type", "Pick how the step appears: a tooltip bubble, a spotlight cut-out, or a centered modal.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_step_preview", Triple("Live preview", "This preview matches exactly what users see, in the flow's theme. Toggle light and dark right above it.", false)),
+            Triple(StepType.MODAL, null, Triple("Anchors and tap-to-advance", "Tooltips and spotlights point at an element by its anchor key. A step can also advance when the user taps that element, so the tour follows real actions.", false)),
+            Triple(StepType.TOOLTIP, "portal_step_close", Triple("Close the editor", "Tap the X to return to the steps. Nothing is saved unless you press Save.", true)),
+            // Appearance
+            Triple(StepType.TOOLTIP, "portal_appearance", Triple("Theme this flow", "Tap Theme to open the appearance editor.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_appearance_lightdark", Triple("Light and dark", "Design a separate look for light and dark mode. The SDK picks the right one on each device.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_appearance_preview", Triple("Live theme preview", "Everything updates here instantly: accent colour, corner radius, right-to-left, button labels, the step counter, and text size.", false)),
+            Triple(StepType.MODAL, null, Triple("Per-flow theming", "Each flow carries its own theme, so a promo can look different from onboarding. The font follows the host app.", false)),
+            Triple(StepType.TOOLTIP, "portal_appearance_back", Triple("Back to steps", "Tap back to return.", true)),
+            // Analytics
+            Triple(StepType.TOOLTIP, "portal_analytics", Triple("See analytics", "Tap Analytics to see how real users move through this flow.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_analytics_hero", Triple("Completion rate", "The headline number: of everyone who started, how many finished.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_analytics_tiles", Triple("Key metrics", "Started, completed, skipped, and anchor-missing counts, collected from real devices.", false)),
+            Triple(StepType.MODAL, null, Triple("Per-step views", "Below, a chart shows how many users saw each step, by name, so you can spot where people drop off.", false)),
+            Triple(StepType.TOOLTIP, "portal_analytics_back", Triple("Back to steps", "Tap back to return.", true)),
+            // Publish + finish
+            Triple(StepType.SPOTLIGHT, "portal_publish", Triple("Publish", "When you're happy, publish. Your app picks up the change on its next launch, with no app release.", false)),
+            Triple(StepType.MODAL, null, Triple("That's GuideFlow", "You've seen projects, flows, the step editor, theming, and analytics. Now build your own tutorial.", false)),
         )
         steps.forEach { (type, anchor, content) ->
             val (title, body, advance) = content

@@ -91,7 +91,7 @@ fun AnalyticsScreen(
                             }
                         }
                         item {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(Modifier.fillMaxWidth().guideFlowAnchor("portal_analytics_tiles"), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 MetricTile("Started", s.started, Gf.tooltip, Gf.tooltipBg, Modifier.weight(1f))
                                 MetricTile("Completed", s.completed, Gf.publishedFg, Gf.publishedBg, Modifier.weight(1f))
                             }

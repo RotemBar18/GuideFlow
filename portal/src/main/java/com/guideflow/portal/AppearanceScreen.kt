@@ -110,11 +110,15 @@ fun AppearanceScreen(
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Pinned: variant switcher + live preview (stays visible while you scroll).
             Column(
-                Modifier.fillMaxWidth().guideFlowAnchor("portal_appearance_preview").padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
-                ThemedPreview(cur, accentColor, buttonTextColor, cardColor, txtColor, "Welcome", "This is how your tutorial looks.", 1, 3)
+                Box(Modifier.guideFlowAnchor("portal_appearance_lightdark")) {
+                    TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
+                }
+                Box(Modifier.guideFlowAnchor("portal_appearance_preview")) {
+                    ThemedPreview(cur, accentColor, buttonTextColor, cardColor, txtColor, "Welcome", "This is how your tutorial looks.", 1, 3)
+                }
             }
 
             Column(

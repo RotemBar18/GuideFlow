@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.InfoBanner
+import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.portal.ui.typeBlurb
 import com.guideflow.portal.ui.typeColors
@@ -126,7 +127,7 @@ fun StepEditorScreen(
             Modifier.fillMaxWidth().background(Gf.card).statusBarsPadding().padding(start = 14.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onClose) { Text("✕", fontSize = 18.sp, color = Gf.textSecondary) }
+            TextButton(onClick = onClose, modifier = Modifier.guideFlowAnchor("portal_step_close")) { Text("✕", fontSize = 18.sp, color = Gf.textSecondary) }
             Text(if (existing == null) "New step" else "Edit step", color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
             Button(onClick = { save() }, enabled = !busy, shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Gf.primary)) { Text("Save", fontWeight = FontWeight.SemiBold) }
@@ -138,24 +139,26 @@ fun StepEditorScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SectionLabel("Type")
-            TypeSegmented(type) { type = it }
+            Box(Modifier.guideFlowAnchor("portal_step_type")) { TypeSegmented(type) { type = it } }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Preview", color = Gf.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 PreviewModeToggle(previewDark) { previewDark = it }
             }
-            LivePreview(
-                type = type,
-                title = title.ifBlank { "Title" },
-                body = body,
-                theme = theme,
-                accent = parseHex(theme.accentColor ?: "#4F5BD5"),
-                buttonText = parseHexOrNull(theme.buttonTextColor) ?: Color.White,
-                cardColor = previewCard,
-                textColor = previewText,
-                stepIndex = previewIndex,
-                totalSteps = previewTotal,
-                advanceByTap = needsAnchor && advanceOnTap,
-            )
+            Box(Modifier.guideFlowAnchor("portal_step_preview")) {
+                LivePreview(
+                    type = type,
+                    title = title.ifBlank { "Title" },
+                    body = body,
+                    theme = theme,
+                    accent = parseHex(theme.accentColor ?: "#4F5BD5"),
+                    buttonText = parseHexOrNull(theme.buttonTextColor) ?: Color.White,
+                    cardColor = previewCard,
+                    textColor = previewText,
+                    stepIndex = previewIndex,
+                    totalSteps = previewTotal,
+                    advanceByTap = needsAnchor && advanceOnTap,
+                )
+            }
         }
 
         // Scrollable fields.
