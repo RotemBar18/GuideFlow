@@ -73,7 +73,7 @@ fun AppearanceScreen(
 
     val cur = if (editingDark) dark else light
     fun set(t: FlowTheme) { if (editingDark) dark = t else light = t }
-    // Layout direction is a flow property, not a colour-mode one — keep both variants in sync.
+    // Layout direction is a flow property, not a colour-mode one, so keep both variants in sync.
     fun setRtl(rtl: Boolean) { light = light.copy(rtl = rtl); dark = dark.copy(rtl = rtl) }
 
     val accentColor = parseColor(cur.accentColor ?: "#4F5BD5")
@@ -101,7 +101,7 @@ fun AppearanceScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
                 ) { Text("Save light + dark", fontWeight = FontWeight.SemiBold) }
                 Text(
-                    "Saving moves the flow to Draft — republish to push the new look.",
+                    "Saving moves the flow to Draft. Republish to push the new look.",
                     color = Gf.textFaint, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp),
                 )
             }
@@ -122,7 +122,7 @@ fun AppearanceScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Text(
-                    "Colours below apply to the ${if (editingDark) "DARK" else "LIGHT"} design; the SDK picks one based on the device theme. Card and text always follow the device.",
+                    "Colours below apply to the ${if (editingDark) "DARK" else "LIGHT"} design; the SDK picks one based on the device theme.",
                     color = Gf.textMuted, fontSize = 11.5.sp,
                 )
 
@@ -132,7 +132,7 @@ fun AppearanceScreen(
                 Text("Applies to both light and dark.", color = Gf.textFaint, fontSize = 11.sp)
 
                 // ---- The Next/Done button ----
-                SectionLabel("Button — Next / Done")
+                SectionLabel("Next / Done button")
                 Text(
                     "One button: it reads your Next label on every step and your Done label on the last step.",
                     color = Gf.textMuted, fontSize = 11.5.sp,
@@ -147,12 +147,12 @@ fun AppearanceScreen(
                 OutlinedTextField(cur.doneLabel, { set(cur.copy(doneLabel = it)) }, singleLine = true, label = { Text("Done label (last step)") }, modifier = Modifier.fillMaxWidth())
 
                 // ---- The Back button ----
-                SectionLabel("Button — Back")
+                SectionLabel("Back button")
                 Text("Shown on every step except the first.", color = Gf.textMuted, fontSize = 11.5.sp)
                 OutlinedTextField(cur.backLabel, { set(cur.copy(backLabel = it)) }, singleLine = true, label = { Text("Back label") }, modifier = Modifier.fillMaxWidth())
 
                 // ---- The Skip button ----
-                SectionLabel("Button — Skip")
+                SectionLabel("Skip button")
                 ToggleRow("Show skip button", cur.showSkip) { set(cur.copy(showSkip = it)) }
                 OutlinedTextField(cur.skipLabel, { set(cur.copy(skipLabel = it)) }, singleLine = true, label = { Text("Skip label") }, modifier = Modifier.fillMaxWidth())
 
@@ -191,7 +191,7 @@ fun AppearanceScreen(
                 ToggleRow("Show step counter", cur.showProgress) { set(cur.copy(showProgress = it)) }
                 OutlinedTextField(cur.progressFormat, { set(cur.copy(progressFormat = it)) }, singleLine = true,
                     label = { Text("Counter format") }, modifier = Modifier.fillMaxWidth())
-                Text("Use {current} and {total} as placeholders, e.g. שלב {current} מתוך {total}", color = Gf.textFaint, fontSize = 11.sp)
+                Text("Use {current} and {total} as placeholders, for example: Step {current} of {total}", color = Gf.textFaint, fontSize = 11.sp)
                 Spacer(Modifier.height(8.dp))
             }
         }

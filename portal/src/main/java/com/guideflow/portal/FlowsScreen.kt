@@ -80,7 +80,7 @@ fun FlowsScreen(
     }
     LaunchedEffect(project.projectId) { reload() }
 
-    // Copy a flow (steps + both themes) as a new DRAFT — e.g. to make an RTL Hebrew variant.
+    // Copy a flow (steps + both themes) as a new DRAFT, for example to make an RTL variant.
     fun uniqueKey(base: String): String {
         val keys = flows.map { it.flowKey }.toSet()
         if (base !in keys) return base
@@ -116,7 +116,7 @@ fun FlowsScreen(
                     ErrorStateView("Couldn't load flows", "Something went wrong reaching GuideFlow.", onRetry = { scope.launch { reload() } })
                 }
                 flows.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    EmptyState("No flows yet", "A flow is one tutorial — an ordered list of steps. Create your first one.", "New flow", { showCreate = true })
+                    EmptyState("No flows yet", "A flow is one tutorial: an ordered list of steps. Create your first one.", "New flow", { showCreate = true })
                 }
                 else -> Column(Modifier.fillMaxSize()) {
                     SectionLabel("Flows · ${flows.size}", Modifier.padding(start = 18.dp, top = 14.dp, bottom = 4.dp))
@@ -243,7 +243,7 @@ private fun CreateFlowDialog(onDismiss: () -> Unit, onCreate: (String, String) -
                 OutlinedTextField(
                     value = key, onValueChange = { key = it.lowercase().replace(' ', '_') },
                     label = { Text("Flow key *") }, singleLine = true,
-                    supportingText = { Text("Used in code: startFlow(\"$key\"). Lowercase, no spaces — can't change later.", fontSize = 11.sp) },
+                    supportingText = { Text("Used in code: startFlow(\"$key\"). Lowercase, no spaces. Can't change later.", fontSize = 11.sp) },
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(

@@ -213,7 +213,7 @@ private fun ProjectKeySheet(
                 Text("Project created", color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
             Spacer(Modifier.height(12.dp))
-            Text("Paste this project key into your app's SDK setup. It's shown only once — copy it now.",
+            Text("Paste this project key into your app's SDK setup. It's shown only once, so copy it now.",
                 color = Gf.textMuted, fontSize = 13.sp, lineHeight = 19.sp)
             Spacer(Modifier.height(14.dp))
             Row(

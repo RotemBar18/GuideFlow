@@ -20,13 +20,15 @@ The backend is deployed on Google Cloud Run and works from any network:
 ## Features
 
 - Three overlay types: tooltip (a bubble on an element), spotlight (dim plus cut-out), and modal (a centered dialog).
-- Multi-step flows with Next, Back, Skip, and Done.
+- Multi-step flows with Next, Back, Skip, and Done. Steps can span multiple screens: a flow keeps running as the host app navigates.
 - An anchor system: tag any composable with `Modifier.guideFlowAnchor("key")` and steps target it by key.
+- Advance-on-tap steps: the highlighted element stays interactive, so tapping it both runs the app's own action (for example navigation) and advances the tour. That step shows no Next button. While a step is active the rest of the screen is blocked, so the user cannot wander off the tour.
 - Missing-anchor fallback: a tooltip or spotlight whose anchor is not on screen falls back to a modal and emits an anchor-missing callback. The SDK does not crash the host app.
+- Per-flow theming, with separate light and dark designs selected by the device theme: accent colour, button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom Next/Back/Skip/Done labels, a customizable step-counter format, font family, and title/body text size.
 - One-request remote config (`GET /api/client/config`), with `304 Not Modified` based on config version.
 - Offline cache in DataStore. A failed refresh keeps the previous config.
-- Analytics: the SDK records flow and step events into a Room queue and uploads them with WorkManager (deleting only events the server acknowledges); the backend aggregates per-flow summaries that the portal displays.
-- Authoring portal: Google Sign-In, project/flow/step CRUD, publish with validation, a live step preview, and a per-flow analytics view.
+- Analytics: the SDK records flow and step events into a Room queue and uploads them with WorkManager (deleting only events the server acknowledges); the backend aggregates per-flow summaries that the portal displays as a completion rate, metric tiles, and a per-step view chart.
+- Authoring portal: Google Sign-In, project and flow management (create, rename, duplicate, delete), a step editor with a live themed preview, an appearance editor for the per-flow theme, publish with validation, and a per-flow analytics view.
 - Security: Firebase ID-token verification, project-ownership checks, hashed project keys, and hashed SDK user IDs.
 
 ## Screenshots
@@ -64,7 +66,8 @@ SDK overlays in the demo app:
           "type": "SPOTLIGHT",
           "anchorKey": "budget_button",
           "title": "Budget Planner",
-          "body": "Tap here to manage your monthly budget."
+          "body": "Tap here to manage your monthly budget.",
+          "advanceOnTap": true
         },
         {
           "id": "step_7c0a1f22",
@@ -74,13 +77,25 @@ SDK overlays in the demo app:
           "title": "You're all set",
           "body": "That's the tour. You can re-run it any time."
         }
-      ]
+      ],
+      "theme": {
+        "accentColor": "#4F5BD5",
+        "rtl": false,
+        "cornerRadius": 14,
+        "fontFamily": "Default",
+        "titleSize": 16,
+        "bodySize": 14,
+        "nextLabel": "Next",
+        "doneLabel": "Done",
+        "progressFormat": "Step {current} of {total}"
+      },
+      "themeDark": { "accentColor": "#7C3AED", "rtl": false }
     }
   ]
 }
 ```
 
-`StepType` is one of `TOOLTIP`, `SPOTLIGHT`, `MODAL`. `FlowStatus` is one of `DRAFT`, `PUBLISHED`, `ARCHIVED`.
+`StepType` is one of `TOOLTIP`, `SPOTLIGHT`, `MODAL`. `FlowStatus` is one of `DRAFT`, `PUBLISHED`, `ARCHIVED`. Every `theme` field has a default, so older configs deserialize unchanged; `advanceOnTap` defaults to `false`. `themeDark` is the variant used when the device is in dark mode.
 
 ## Database (Cloud Firestore)
 
@@ -91,10 +106,10 @@ projects/{projectId}
   { projectId, ownerUid, name, projectKeyHash, configVersion, createdAt }
 
 flows/{flowId}
-  { flowId, projectId, flowKey, name, status }
+  { flowId, projectId, flowKey, name, status, themeJson, themeDarkJson }
 
 steps/{stepId}
-  { id, flowId, order, type, anchorKey, title, body }
+  { id, flowId, order, type, anchorKey, title, body, advanceOnTap }
 
 publishedConfigs/{projectId}
   { json }   // the compiled TutorialConfig above, as a JSON string
@@ -115,7 +130,8 @@ object GuideFlow {
     fun startFlow(flowKey: String): Result<Unit>
     fun stopFlow(reason: StopReason = StopReason.MANUAL)
     suspend fun flush(): Result<Int>             // upload queued analytics now
-    fun loadLocalFlows(flows: List<TutorialFlow>) // offline / test fallback
+    fun loadLocalFlows(flows: List<TutorialFlow>) // local fallback, per missing key
+    fun availableFlows(): List<TutorialFlow>      // published flows (+ local fallbacks)
 }
 
 @Composable fun GuideFlowHost(modifier: Modifier = Modifier, content: @Composable () -> Unit)
@@ -242,6 +258,8 @@ erDiagram
         string flowKey
         string name
         string status
+        string themeJson
+        string themeDarkJson
     }
     STEP {
         string id PK
@@ -251,6 +269,7 @@ erDiagram
         string anchorKey
         string title
         string body
+        bool advanceOnTap
     }
     PUBLISHED_CONFIG {
         string projectId PK

@@ -149,7 +149,7 @@ fun StepsScreen(
             when {
                 loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Gf.primary) }
                 steps.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    EmptyState("Add your first step", "Each step is one screen of the tutorial — a tooltip, spotlight, or modal. Steps play in order.", "Add step", onAddStep)
+                    EmptyState("Add your first step", "Each step is one screen of the tutorial: a tooltip, spotlight, or modal. Steps play in order.", "Add step", onAddStep)
                 }
                 else -> Column(Modifier.fillMaxSize()) {
                     if (issues.isNotEmpty()) {
@@ -177,7 +177,7 @@ private fun ValidationBanner(issues: List<String>, modifier: Modifier = Modifier
             Box(Modifier.width(18.dp).height(18.dp).clip(RoundedCornerShape(50)).background(Gf.errorFg), contentAlignment = Alignment.Center) {
                 Text("!", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
-            Text("Can't publish yet — ${issues.size} issue${if (issues.size == 1) "" else "s"}", color = Gf.errorText, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text("Can't publish yet: ${issues.size} issue${if (issues.size == 1) "" else "s"}", color = Gf.errorText, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
         Spacer(Modifier.height(8.dp))
         issues.forEach { Text("•  $it", color = Color(0xFFA85151), fontSize = 12.sp, lineHeight = 19.sp) }

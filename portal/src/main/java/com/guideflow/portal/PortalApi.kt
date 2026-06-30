@@ -36,7 +36,7 @@ import kotlinx.serialization.json.Json
  * dev machine's LAN IP.
  */
 class PortalApi(
-    // Hosted backend (Cloud Run) — works on any network, no shared Wi-Fi needed.
+    // Hosted backend (Cloud Run), works on any network, no shared Wi-Fi needed.
     private val baseUrl: String = "https://guideflow-backend-794711970205.me-west1.run.app",
 ) {
     private val http = HttpClient(OkHttp) {

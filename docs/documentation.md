@@ -21,13 +21,15 @@ The system has five parts: the SDK (`guideflow-sdk`), a demo host app (`app`), t
 ## Features
 
 - Tooltip, spotlight, and modal step types.
-- Multi-step flows with Next, Back, Skip, and Done.
+- Multi-step flows with Next, Back, Skip, and Done. A flow keeps running across screen navigation, so a step can continue on the next page.
 - `Modifier.guideFlowAnchor("key")` to mark any composable as a target.
+- Advance-on-tap steps: the highlighted element stays interactive, so one tap runs the app's own action and advances the tour (no Next button on that step). The rest of the screen is blocked while a step is active.
 - Automatic modal fallback when an anchor is missing on screen, plus an anchor-missing callback. The SDK does not crash the host app.
+- Per-flow theming with separate light and dark designs (chosen by the device theme): accent and button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom button labels, a customizable step-counter format, font family, and text size.
 - One-request remote config (`GET /api/client/config`) with `304 Not Modified` based on config version.
 - Offline cache in DataStore. A failed refresh keeps the last good config.
-- Analytics: flow and step events are queued locally (Room) and uploaded in the background (WorkManager); the backend aggregates per-flow summaries shown in the portal.
-- Authoring portal with Google Sign-In, project/flow/step CRUD, publish-time validation, a live step preview, and a per-flow analytics view.
+- Analytics: flow and step events are queued locally (Room) and uploaded in the background (WorkManager); the backend aggregates per-flow summaries shown in the portal as a completion rate, metric tiles, and a per-step view chart.
+- Authoring portal with Google Sign-In, project and flow management (create, rename, duplicate, delete), a step editor with a live themed preview, an appearance editor for the per-flow theme, publish-time validation, and a per-flow analytics view.
 - Security: Firebase ID-token verification, per-request project-ownership checks, SHA-256 hashed project keys, and hashed SDK user IDs.
 
 ## Implementation
@@ -126,6 +128,13 @@ The overlay renders over `GuideFlowHost`, and the user advances with Next, Back,
 
 1. Open the portal app and sign in with Google.
 2. Create a project, then copy the `gf_...` key into your app's `initialize(...)` call. It is shown once.
-3. Add a flow and give it a flowKey such as `budget_tutorial`.
-4. Add steps: pick the type, set the anchor key (for tooltip and spotlight), title, and body; use the live preview.
-5. Publish. The flow goes live, and the SDK downloads it on the next `refreshConfig()` or app launch.
+3. Add a flow and give it a flowKey such as `budget_tutorial`. From the flow list you can also rename, duplicate, or delete a flow; duplicating copies its steps and both themes into a new draft, which is handy for making a translated or right-to-left variant.
+4. Add steps: pick the type, set the anchor key (for tooltip and spotlight), title, and body. A live preview shows the step exactly as it will render, including the flow's theme, and you can toggle light or dark. For a tooltip or spotlight you can turn on "advance when the user taps the element".
+5. Open the appearance editor to set the per-flow theme: colours, corner radius, dim, right-to-left layout, button labels, step-counter format, font, and text size, each with a light and a dark variant.
+6. Publish. Publishing validates the flow (at least one step, unique order, anchors present for tooltip and spotlight), then the flow goes live and the SDK downloads it on the next `refreshConfig()` or app launch.
+
+### Theming and advance-on-tap (how it works end to end)
+
+The per-flow theme lives on the flow as two `FlowTheme` objects (`theme` and `themeDark`), serialized to JSON in Firestore and returned inside the published config. The SDK picks the dark variant when the device is in dark mode and applies it to every overlay; right-to-left affects only the text layout, while overlay placement stays in absolute coordinates.
+
+`advanceOnTap` is a per-step flag. When it is set, the overlay leaves the anchored element uncovered (blocking the rest of the screen with strips around it) so the element receives the real tap: its own `onClick` runs and the SDK advances the flow on the same gesture. If that step's anchor is missing, it falls back to a modal that still shows a Next button, so the user is never stuck.

@@ -201,7 +201,7 @@ fun StepEditorScreen(
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text("⚓", color = Gf.textFaint, fontSize = 13.sp)
-                    Text("Anchor key — not needed for modals.", color = Gf.textMuted, fontSize = 12.sp)
+                    Text("Anchor key is not needed for modals.", color = Gf.textMuted, fontSize = 12.sp)
                 }
             }
 

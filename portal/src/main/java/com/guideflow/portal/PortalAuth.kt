@@ -62,7 +62,7 @@ class PortalAuth {
     }
 
     companion object {
-        // Web client ID (OAuth) for project guideflow-af26c — public, not a secret.
+        // Web client ID (OAuth) for project guideflow-af26c (public, not a secret).
         const val WEB_CLIENT_ID =
             "794711970205-nhbnf6f3p3s3lh58fmhnims07am81r71.apps.googleusercontent.com"
     }
