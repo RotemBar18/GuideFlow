@@ -316,7 +316,7 @@ private fun PreviewCard(
     Column(Modifier.fillMaxWidth(0.82f).clip(RoundedCornerShape(theme.cornerRadius.dp)).background(cardColor).padding(13.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.weight(1f))
-            if (theme.showSkip) Text(theme.skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 11.sp)
+            if (theme.showSkip && stepIndex < totalSteps - 1) Text(theme.skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 11.sp)
         }
         if (body.isNotBlank()) {
             Spacer(Modifier.height(5.dp))

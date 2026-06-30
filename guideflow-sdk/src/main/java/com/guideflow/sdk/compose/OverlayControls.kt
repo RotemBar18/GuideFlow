@@ -41,7 +41,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
     Column(modifier) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(step.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            if (theme.showSkip) {
+            if (theme.showSkip && !state.isLastStep) {
                 TextButton(
                     onClick = { coordinator.skip() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.SKIP),
