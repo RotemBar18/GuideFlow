@@ -20,6 +20,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.OutlinedTextField
@@ -47,6 +49,7 @@ import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.portal.ui.StatusPill
+import com.guideflow.shared.CreateStepRequest
 import com.guideflow.shared.ProjectDto
 import com.guideflow.shared.TutorialFlow
 import kotlinx.coroutines.launch
@@ -65,6 +68,7 @@ fun FlowsScreen(
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var showCreate by remember { mutableStateOf(false) }
+    var deleteTarget by remember { mutableStateOf<TutorialFlow?>(null) }
 
     suspend fun reload() {
         loading = true; error = null
@@ -74,6 +78,25 @@ fun FlowsScreen(
         loading = false
     }
     LaunchedEffect(project.projectId) { reload() }
+
+    // Copy a flow (steps + both themes) as a new DRAFT — e.g. to make an RTL Hebrew variant.
+    fun uniqueKey(base: String): String {
+        val keys = flows.map { it.flowKey }.toSet()
+        if (base !in keys) return base
+        var i = 2
+        while ("${base}_$i" in keys) i++
+        return "${base}_$i"
+    }
+    suspend fun duplicate(src: TutorialFlow) {
+        error = null
+        runCatching {
+            val copy = api.createFlow(project.projectId, uniqueKey("${src.flowKey}_copy"), "${src.name} (copy)", getToken())
+            src.steps.sortedBy { it.order }.forEach { s ->
+                api.addStep(copy.id, CreateStepRequest(s.type, s.anchorKey, s.title, s.body, s.order, s.advanceOnTap), getToken())
+            }
+            api.updateFlowThemes(copy.id, src.theme, src.themeDark, getToken())
+        }.onSuccess { reload() }.onFailure { error = it.message ?: "Failed to duplicate flow" }
+    }
 
     Scaffold(
         containerColor = Gf.surface,
@@ -97,7 +120,14 @@ fun FlowsScreen(
                 else -> Column(Modifier.fillMaxSize()) {
                     SectionLabel("Flows · ${flows.size}", Modifier.padding(start = 18.dp, top = 14.dp, bottom = 4.dp))
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                        items(flows, key = { it.id }) { flow -> FlowCard(flow) { onOpenFlow(flow) } }
+                        items(flows, key = { it.id }) { flow ->
+                            FlowCard(
+                                flow = flow,
+                                onClick = { onOpenFlow(flow) },
+                                onDuplicate = { scope.launch { duplicate(flow) } },
+                                onDelete = { deleteTarget = flow },
+                            )
+                        }
                     }
                 }
             }
@@ -117,15 +147,48 @@ fun FlowsScreen(
             },
         )
     }
+
+    deleteTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Delete flow?", fontWeight = FontWeight.Bold) },
+            text = { Text("\"${target.name}\" and its ${target.steps.size} step${if (target.steps.size == 1) "" else "s"} will be permanently deleted.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        deleteTarget = null
+                        scope.launch {
+                            runCatching { api.deleteFlow(target.id, getToken()) }
+                                .onSuccess { reload() }
+                                .onFailure { error = it.message ?: "Failed to delete flow" }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Gf.errorFg),
+                ) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
+        )
+    }
 }
 
 @Composable
-private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit) {
+private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
     GfCard(Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(Modifier.padding(15.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(flow.name, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
                 StatusPill(flow.status)
+                Box {
+                    Text(
+                        "⋮", color = Gf.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { menu = true }.padding(start = 12.dp, end = 2.dp),
+                    )
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text("Duplicate") }, onClick = { menu = false; onDuplicate() })
+                        DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
+                    }
+                }
             }
             Spacer(Modifier.height(7.dp))
             Text(flow.flowKey, color = Gf.textMuted, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
