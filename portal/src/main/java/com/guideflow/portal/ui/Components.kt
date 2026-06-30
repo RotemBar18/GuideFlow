@@ -35,6 +35,14 @@ fun typeColors(type: StepType): Pair<Color, Color> = when (type) {
     StepType.MODAL -> Gf.modal to Gf.modalBg
 }
 
+/** Map a FlowTheme font-family name to a Compose [androidx.compose.ui.text.font.FontFamily]. */
+fun fontFamilyOf(name: String): androidx.compose.ui.text.font.FontFamily = when (name) {
+    "SansSerif" -> androidx.compose.ui.text.font.FontFamily.SansSerif
+    "Serif" -> androidx.compose.ui.text.font.FontFamily.Serif
+    "Monospace" -> androidx.compose.ui.text.font.FontFamily.Monospace
+    else -> androidx.compose.ui.text.font.FontFamily.Default
+}
+
 fun typeBlurb(type: StepType): String = when (type) {
     StepType.TOOLTIP -> "A small bubble that points at one on-screen element. Needs an anchor key."
     StepType.SPOTLIGHT -> "Dims the screen and highlights one element with a cut-out. Needs an anchor key."

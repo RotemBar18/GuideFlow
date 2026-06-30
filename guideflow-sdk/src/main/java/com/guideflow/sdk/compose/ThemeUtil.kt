@@ -3,6 +3,7 @@ package com.guideflow.sdk.compose
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import com.guideflow.sdk.flow.ActiveFlowState
 import com.guideflow.shared.FlowTheme
 
@@ -24,3 +25,11 @@ internal fun FlowTheme.buttonTextColorOrDefault(): Color = buttonTextColor?.toCo
 
 /** Custom card background, or null to follow the host light/dark theme. */
 internal fun FlowTheme.backgroundColorOrNull(): Color? = backgroundColor?.toColorOrNull()
+
+/** Map the theme's font-family name to a Compose [FontFamily]. */
+internal fun FlowTheme.fontFamilyOrDefault(): FontFamily = when (fontFamily) {
+    "SansSerif" -> FontFamily.SansSerif
+    "Serif" -> FontFamily.Serif
+    "Monospace" -> FontFamily.Monospace
+    else -> FontFamily.Default
+}
