@@ -14,10 +14,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.guideflow.sdk.api.GuideFlow
 import com.guideflow.sdk.flow.ActiveFlowState
@@ -32,6 +35,9 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
     val coordinator = GuideFlow.coordinator
     val step = state.currentStep
     val theme = state.activeTheme()
+    // Apply RTL to the text content only; overlay placement stays LTR (see GuideFlowHost).
+    val dir = if (state.flow.theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+    CompositionLocalProvider(LocalLayoutDirection provides dir) {
     Column(modifier) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(step.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
@@ -74,6 +80,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
                 Text(if (state.isLastStep) theme.doneLabel else theme.nextLabel)
             }
         }
+    }
     }
 }
 

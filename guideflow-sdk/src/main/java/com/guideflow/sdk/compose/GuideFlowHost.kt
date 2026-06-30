@@ -3,13 +3,10 @@ package com.guideflow.sdk.compose
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import com.guideflow.sdk.api.GuideFlow
 import com.guideflow.sdk.flow.ActiveFlowState
 import com.guideflow.shared.StepType
@@ -48,14 +45,12 @@ private fun GuideFlowOverlay(state: ActiveFlowState) {
         }
     }
 
-    // RTL is content-driven (language), not appearance-driven, so read the base
-    // theme rather than the device's light/dark variant.
-    val dir = if (state.flow.theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
-    CompositionLocalProvider(LocalLayoutDirection provides dir) {
-        when {
-            step.type == StepType.MODAL || anchorMissing -> ModalFallback(state)
-            step.type == StepType.TOOLTIP -> TooltipOverlay(state, anchor!!)
-            step.type == StepType.SPOTLIGHT -> SpotlightOverlay(state, anchor!!)
-        }
+    // Overlay placement uses absolute root pixels, so it must stay LTR; RTL is
+    // applied only to the card's text content (see StepControls). Otherwise
+    // Modifier.offset mirrors the X axis and anchors land on the wrong side.
+    when {
+        step.type == StepType.MODAL || anchorMissing -> ModalFallback(state)
+        step.type == StepType.TOOLTIP -> TooltipOverlay(state, anchor!!)
+        step.type == StepType.SPOTLIGHT -> SpotlightOverlay(state, anchor!!)
     }
 }
