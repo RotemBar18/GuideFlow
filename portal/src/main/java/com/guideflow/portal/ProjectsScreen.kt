@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -84,7 +85,7 @@ fun ProjectsScreen(
     Scaffold(
         containerColor = Gf.surface,
         topBar = {
-            Column(Modifier.fillMaxWidth().background(Gf.card).padding(start = 18.dp, end = 12.dp, top = 14.dp, bottom = 12.dp)) {
+            Column(Modifier.fillMaxWidth().background(Gf.card).statusBarsPadding().padding(start = 18.dp, end = 12.dp, top = 14.dp, bottom = 12.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("Projects", color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.weight(1f))
                     TextButton(onClick = { scope.launch { reload() } }) { Text("↻", fontSize = 18.sp, color = Gf.textSecondary) }

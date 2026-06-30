@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
@@ -131,7 +132,7 @@ private fun PortalApp() {
 
 @Composable
 private fun LoginScreen(busy: Boolean, error: String?, onSignIn: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Color(0xFFFCFCFD)), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(Color(0xFFFCFCFD)).systemBarsPadding(), contentAlignment = Alignment.Center) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
