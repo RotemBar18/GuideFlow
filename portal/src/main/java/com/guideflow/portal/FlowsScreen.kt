@@ -177,7 +177,8 @@ fun DetailHeader(
 ) {
     Column(Modifier.fillMaxWidth().background(Gf.card).statusBarsPadding().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Back to $backLabel", color = Gf.textMuted, fontSize = 12.sp, modifier = Modifier.clickable { onBack() })
+            Text("←", color = Gf.textSecondary, fontSize = 22.sp,
+                modifier = Modifier.clickable(onClickLabel = "Back to $backLabel") { onBack() }.padding(end = 10.dp, top = 2.dp, bottom = 2.dp))
             Spacer(Modifier.weight(1f))
             action?.invoke()
         }

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -117,7 +119,7 @@ fun StepEditorScreen(
     Column(Modifier.fillMaxSize().background(Gf.surface)) {
         // Header
         Row(
-            Modifier.fillMaxWidth().background(Gf.card).padding(start = 14.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+            Modifier.fillMaxWidth().background(Gf.card).statusBarsPadding().padding(start = 14.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TextButton(onClick = onClose) { Text("✕", fontSize = 18.sp, color = Gf.textSecondary) }
@@ -152,7 +154,7 @@ fun StepEditorScreen(
         }
 
         // Scrollable fields.
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
             InfoBanner(typeBlurb(type), fg = typeFg, bg = typeBg, modifier = Modifier.fillMaxWidth())
 
             Spacer(Modifier.height(16.dp))
