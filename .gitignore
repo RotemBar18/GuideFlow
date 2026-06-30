@@ -24,3 +24,4 @@ local.properties
 /guideflow_key.json
 **/guideflow_key*.json
 google-services.json
+portal_tour_seed.txt

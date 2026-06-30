@@ -49,6 +49,7 @@ import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.portal.ui.StatusPill
+import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.shared.CreateStepRequest
 import com.guideflow.shared.ProjectDto
 import com.guideflow.shared.TutorialFlow
@@ -107,6 +108,7 @@ fun FlowsScreen(
             ExtendedFloatingActionButton(
                 onClick = { showCreate = true },
                 containerColor = Gf.primary, contentColor = Color.White, shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.guideFlowAnchor("portal_new_flow"),
             ) { Text("+  New flow", fontWeight = FontWeight.SemiBold) }
         },
     ) { padding ->
@@ -125,6 +127,7 @@ fun FlowsScreen(
                         items(flows, key = { it.id }) { flow ->
                             FlowCard(
                                 flow = flow,
+                                isFirst = flow.id == flows.firstOrNull()?.id,
                                 onClick = { onOpenFlow(flow) },
                                 onRename = { renameTarget = flow },
                                 onDuplicate = { duplicateTarget = flow },
@@ -221,9 +224,10 @@ fun FlowsScreen(
 }
 
 @Composable
-private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit, onRename: () -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit) {
+private fun FlowCard(flow: TutorialFlow, isFirst: Boolean = false, onClick: () -> Unit, onRename: () -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    GfCard(Modifier.fillMaxWidth().clickable { onClick() }) {
+    val cardAnchor = if (isFirst) Modifier.guideFlowAnchor("portal_flow_card") else Modifier
+    GfCard(cardAnchor.fillMaxWidth().clickable { onClick() }) {
         Column(Modifier.padding(15.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(flow.name, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
@@ -231,7 +235,8 @@ private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit, onRename: () -> Un
                 Box {
                     Text(
                         "⋮", color = Gf.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { menu = true }.padding(start = 12.dp, end = 2.dp),
+                        modifier = (if (isFirst) Modifier.guideFlowAnchor("portal_flow_menu") else Modifier)
+                            .clickable { menu = true }.padding(start = 12.dp, end = 2.dp),
                     )
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text("Rename") }, onClick = { menu = false; onRename() })
@@ -294,11 +299,13 @@ fun DetailHeader(
     status: (@Composable () -> Unit)? = null,
     subtitle: String? = null,
     action: (@Composable () -> Unit)? = null,
+    backAnchorKey: String? = null,
 ) {
     Column(Modifier.fillMaxWidth().background(Gf.card).statusBarsPadding().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("←", color = Gf.textSecondary, fontSize = 22.sp,
-                modifier = Modifier.clickable(onClickLabel = "Back to $backLabel") { onBack() }.padding(end = 10.dp, top = 2.dp, bottom = 2.dp))
+                modifier = (if (backAnchorKey != null) Modifier.guideFlowAnchor(backAnchorKey) else Modifier)
+                    .clickable(onClickLabel = "Back to $backLabel") { onBack() }.padding(end = 10.dp, top = 2.dp, bottom = 2.dp))
             Spacer(Modifier.weight(1f))
             action?.invoke()
         }

@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,10 @@ import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.ErrorBanner
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.PortalTheme
+import com.guideflow.sdk.api.GuideFlow
+import com.guideflow.sdk.api.GuideFlowConfig
+import com.guideflow.sdk.compose.GuideFlowHost
+import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.shared.ProjectDto
 import com.guideflow.shared.TutorialFlow
 import com.guideflow.shared.TutorialStep
@@ -47,10 +52,28 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // The portal onboards authors with a GuideFlow tour of itself, loaded from the
+        // real published config (flow "portal_tour", owned and edited by the portal user).
+        GuideFlow.initialize(
+            context = applicationContext,
+            projectKey = PORTAL_PROJECT_KEY,
+            config = GuideFlowConfig(baseUrl = BASE_URL, enableAnalytics = false, debugLogging = true),
+        )
+
         enableEdgeToEdge()
         setContent {
             PortalTheme { PortalApp() }
         }
+    }
+
+    companion object {
+        const val BASE_URL = "https://guideflow-backend-794711970205.me-west1.run.app"
+        // Identifies which project's published config to load the portal tour from
+        // (the "GuideFlow Console" project, owned and editable by the portal user).
+        // Not a secret (it ships in the app), and not the tutorial content itself.
+        const val PORTAL_PROJECT_KEY = "gf_01b869e1baa953a206467b803739ebdb"
+        const val TOUR_FLOW_KEY = "portal_tour"
     }
 }
 
@@ -93,7 +116,27 @@ private fun PortalApp() {
         return
     }
 
+    // Load the published config and auto-run the tour the first time this user signs in.
+    val prefs = remember { context.getSharedPreferences("guideflow_portal", android.content.Context.MODE_PRIVATE) }
+    fun startTour() {
+        scope.launch {
+            GuideFlow.refreshConfig()
+            GuideFlow.startFlow(MainActivity.TOUR_FLOW_KEY)
+        }
+    }
+    LaunchedEffect(signedIn) {
+        if (!signedIn) return@LaunchedEffect
+        GuideFlow.refreshConfig()
+        val key = "tour_shown_${auth.currentUser?.uid ?: "anon"}"
+        if (!prefs.getBoolean(key, false)) {
+            prefs.edit().putBoolean(key, true).apply()
+            kotlinx.coroutines.delay(700) // let the first screen lay out its anchors
+            GuideFlow.startFlow(MainActivity.TOUR_FLOW_KEY)
+        }
+    }
+
     var screen by remember { mutableStateOf<Screen>(Screen.Projects) }
+    GuideFlowHost {
     when (val s = screen) {
         Screen.Projects -> ProjectsScreen(
             api = api,
@@ -101,6 +144,7 @@ private fun PortalApp() {
             getToken = getToken,
             onSignOut = { auth.signOut(); signedIn = false },
             onOpenProject = { screen = Screen.Flows(it) },
+            onStartTour = { startTour() },
         )
         is Screen.Flows -> FlowsScreen(
             api = api, project = s.project, getToken = getToken,
@@ -127,6 +171,7 @@ private fun PortalApp() {
             api = api, flow = s.flow, getToken = getToken,
             onBack = { screen = Screen.Steps(s.project, s.flow) },
         )
+    }
     }
 }
 

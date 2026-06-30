@@ -38,6 +38,7 @@ import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.portal.ui.TypeBadge
+import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.portal.ui.typeColors
 import com.guideflow.shared.AnalyticsSummary
 import com.guideflow.shared.TutorialFlow
@@ -67,7 +68,7 @@ fun AnalyticsScreen(
 
     Scaffold(
         containerColor = Gf.surface,
-        topBar = { DetailHeader(backLabel = flow.name, title = "Analytics", onBack = onBack) },
+        topBar = { DetailHeader(backLabel = flow.name, title = "Analytics", onBack = onBack, backAnchorKey = "portal_analytics_back") },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when {
@@ -84,7 +85,11 @@ fun AnalyticsScreen(
                         Modifier.fillMaxSize().padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        item { CompletionHero(rate = rate, completed = s.completed, started = s.started) }
+                        item {
+                            Box(Modifier.guideFlowAnchor("portal_analytics_hero")) {
+                                CompletionHero(rate = rate, completed = s.completed, started = s.started)
+                            }
+                        }
                         item {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 MetricTile("Started", s.started, Gf.tooltip, Gf.tooltipBg, Modifier.weight(1f))

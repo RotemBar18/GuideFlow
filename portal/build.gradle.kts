@@ -40,6 +40,8 @@ android {
 
 dependencies {
     implementation(project(":shared"))
+    // The portal onboards new authors with a GuideFlow tour of itself (dogfooding).
+    implementation(project(":guideflow-sdk"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

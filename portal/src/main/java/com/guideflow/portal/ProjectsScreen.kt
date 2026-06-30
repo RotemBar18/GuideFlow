@@ -53,6 +53,7 @@ import com.guideflow.portal.ui.ErrorStateView
 import com.guideflow.portal.ui.EmptyState
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
+import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.shared.ProjectDto
 import kotlinx.coroutines.launch
 
@@ -64,6 +65,7 @@ fun ProjectsScreen(
     getToken: suspend () -> String?,
     onSignOut: () -> Unit,
     onOpenProject: (ProjectDto) -> Unit,
+    onStartTour: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val projects = remember { mutableStateListOf<ProjectDto>() }
@@ -93,6 +95,7 @@ fun ProjectsScreen(
                     Box {
                         TextButton(onClick = { menuOpen = true }) { Text("⋮", fontSize = 20.sp, color = Gf.textSecondary) }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(text = { Text("Take a tour") }, onClick = { menuOpen = false; onStartTour() })
                             DropdownMenuItem(text = { Text("Sign out") }, onClick = { menuOpen = false; onSignOut() })
                         }
                     }
@@ -106,6 +109,7 @@ fun ProjectsScreen(
             ExtendedFloatingActionButton(
                 onClick = { showCreate = true },
                 containerColor = Gf.primary, contentColor = Color.White, shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.guideFlowAnchor("portal_new_project"),
             ) { Text("+  New project", fontWeight = FontWeight.SemiBold) }
         },
     ) { padding ->
@@ -124,7 +128,12 @@ fun ProjectsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(projects, key = { it.projectId }) { p ->
-                        ProjectCard(p, onClick = { onOpenProject(p) }, onDelete = { deleteTarget = p })
+                        val tourAnchor = if (p.projectId == projects.firstOrNull()?.projectId) {
+                            Modifier.guideFlowAnchor("portal_project_card")
+                        } else {
+                            Modifier
+                        }
+                        ProjectCard(p, modifier = tourAnchor, onClick = { onOpenProject(p) }, onDelete = { deleteTarget = p })
                     }
                 }
             }
@@ -177,9 +186,9 @@ fun ProjectsScreen(
 }
 
 @Composable
-private fun ProjectCard(project: ProjectDto, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun ProjectCard(project: ProjectDto, modifier: Modifier = Modifier, onClick: () -> Unit, onDelete: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    GfCard(Modifier.fillMaxWidth().clickable { onClick() }) {
+    GfCard(modifier.fillMaxWidth().clickable { onClick() }) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(project.name, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))

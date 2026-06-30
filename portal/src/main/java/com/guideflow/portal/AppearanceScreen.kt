@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.SectionLabel
+import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.TutorialFlow
 import com.guideflow.shared.progressText
@@ -82,7 +83,7 @@ fun AppearanceScreen(
 
     Scaffold(
         containerColor = Gf.surface,
-        topBar = { DetailHeader(backLabel = flow.name, title = "Appearance", onBack = onBack) },
+        topBar = { DetailHeader(backLabel = flow.name, title = "Appearance", onBack = onBack, backAnchorKey = "portal_appearance_back") },
         bottomBar = {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                 error?.let { Text(it, color = Gf.errorFg, fontSize = 12.sp); Spacer(Modifier.height(6.dp)) }
@@ -109,7 +110,7 @@ fun AppearanceScreen(
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Pinned: variant switcher + live preview (stays visible while you scroll).
             Column(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
+                Modifier.fillMaxWidth().guideFlowAnchor("portal_appearance_preview").padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }

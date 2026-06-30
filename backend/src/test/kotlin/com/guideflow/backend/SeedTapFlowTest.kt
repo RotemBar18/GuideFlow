@@ -3,6 +3,7 @@ package com.guideflow.backend
 import com.google.firebase.auth.FirebaseAuth
 import com.guideflow.backend.auth.FirebaseAuthProvider
 import com.guideflow.shared.CreateStepRequest
+import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.StepType
 import org.junit.Assume.assumeNotNull
 import org.junit.Test
@@ -111,5 +112,68 @@ class SeedTapFlowTest {
         store.publishFlow(flow.flowId)
 
         println("[SEED] created+published page_tour flowId=${flow.flowId} project=${project.projectId}")
+    }
+
+    /**
+     * Seeds the "portal_tour" flow that the portal plays to onboard a new author.
+     * It tours the portal's own screens using advance-on-tap to navigate; Back is
+     * hidden (showBack = false) because the flow changes screens. Re-runnable.
+     */
+    @Test
+    fun seedPortalTour() {
+        val auth = FirebaseAuthProvider.initIfConfigured()
+        assumeNotNull(auth)
+
+        val email = System.getProperty("seedEmail") ?: "rotem68907@gmail.com"
+        val uid = FirebaseAuth.getInstance().getUserByEmail(email).uid
+
+        val store = FirestoreStore()
+        // Dedicated project so the demo app's flow picker never sees the portal tour.
+        val consoleName = "GuideFlow Console"
+        val existing = store.listProjects(uid).firstOrNull { it.name == consoleName }
+        val projectId: String
+        val keyLine: String
+        if (existing != null) {
+            projectId = existing.projectId
+            keyLine = "projectId=$projectId key=(unchanged; shown only at creation)"
+        } else {
+            val (rec, rawKey) = store.createProject(uid, consoleName)
+            projectId = rec.projectId
+            keyLine = "projectId=$projectId key=$rawKey"
+        }
+        java.io.File(System.getProperty("user.dir"), "portal_tour_seed.txt").writeText(keyLine)
+
+        // Recreate so re-running updates the content.
+        store.listFlows(projectId).firstOrNull { it.flowKey == "portal_tour" }?.let { store.deleteFlow(it.flowId) }
+
+        val flow = store.createFlow(projectId, "portal_tour", "Portal walkthrough")
+        val noBack = FlowTheme(showBack = false)
+        store.updateFlow(flow.flowId, flowKey = null, name = null, theme = noBack, themeDark = noBack)
+
+        // (type, anchorKey, title, body, advanceOnTap). advanceOnTap drives screen changes.
+        val steps = listOf(
+            Triple(StepType.MODAL, null as String?, Triple("Welcome to GuideFlow", "This quick tour shows how to build a tutorial. Tap Next.", false)),
+            Triple(StepType.SPOTLIGHT, "portal_new_project", Triple("Projects", "Each app you onboard is a project with its own SDK key.", false)),
+            Triple(StepType.TOOLTIP, "portal_project_card", Triple("Open a project", "Tap a project to see its tutorials.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_new_flow", Triple("Flows", "A flow is one tutorial: an ordered list of steps.", false)),
+            Triple(StepType.TOOLTIP, "portal_flow_menu", Triple("Manage flows", "Rename, duplicate, or delete a flow from this menu.", false)),
+            Triple(StepType.TOOLTIP, "portal_flow_card", Triple("Open a flow", "Tap a flow to edit its steps.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_add_step", Triple("Add steps", "Steps come in three styles: tooltip, spotlight, and modal.", false)),
+            Triple(StepType.TOOLTIP, "portal_appearance", Triple("Theme it", "Tap Theme to style this flow.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_appearance_preview", Triple("Live preview", "Colours, RTL, labels, and text size, with light and dark, shown live as you edit.", false)),
+            Triple(StepType.TOOLTIP, "portal_appearance_back", Triple("Go back", "Tap back to return to the steps.", true)),
+            Triple(StepType.TOOLTIP, "portal_analytics", Triple("See analytics", "Tap Analytics to view how users move through the flow.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_analytics_hero", Triple("Completion", "Completion rate, per-step views, and skips, all from real devices.", false)),
+            Triple(StepType.TOOLTIP, "portal_analytics_back", Triple("Go back", "Tap back to return to the steps.", true)),
+            Triple(StepType.SPOTLIGHT, "portal_publish", Triple("Publish", "Publish to push the tutorial live to your app, no app release needed.", false)),
+            Triple(StepType.MODAL, null, Triple("You're set", "That's GuideFlow. Now build your own tutorial.", false)),
+        )
+        steps.forEach { (type, anchor, content) ->
+            val (title, body, advance) = content
+            store.addStep(flow.flowId, CreateStepRequest(type = type, anchorKey = anchor, title = title, body = body, advanceOnTap = advance))
+        }
+        store.publishFlow(flow.flowId)
+
+        println("[SEED] created+published portal_tour flowId=${flow.flowId} $keyLine")
     }
 }

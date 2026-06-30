@@ -50,6 +50,7 @@ import com.guideflow.portal.ui.StatusPill
 import com.guideflow.portal.ui.TypeBadge
 import com.guideflow.portal.ui.TypeGlyph
 import com.guideflow.portal.ui.typeNeedsAnchor
+import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.shared.FlowStatus
 import com.guideflow.shared.ProjectDto
 import com.guideflow.shared.TutorialFlow
@@ -110,8 +111,8 @@ fun StepsScreen(
                 subtitle = if (current.status == FlowStatus.DRAFT) "Draft - publish to make it live." else "Live.",
                 action = {
                     Row {
-                        TextButton(onClick = onAppearance) { Text("Theme") }
-                        TextButton(onClick = onAnalytics) { Text("Analytics") }
+                        TextButton(onClick = onAppearance, modifier = Modifier.guideFlowAnchor("portal_appearance")) { Text("Theme") }
+                        TextButton(onClick = onAnalytics, modifier = Modifier.guideFlowAnchor("portal_analytics")) { Text("Analytics") }
                     }
                 },
             )
@@ -119,7 +120,7 @@ fun StepsScreen(
         bottomBar = {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = onAddStep, modifier = Modifier.weight(1f).height(50.dp), shape = RoundedCornerShape(14.dp)) {
+                    OutlinedButton(onClick = onAddStep, modifier = Modifier.weight(1f).height(50.dp).guideFlowAnchor("portal_add_step"), shape = RoundedCornerShape(14.dp)) {
                         Text("+  Add step", color = Gf.textPrimary, fontWeight = FontWeight.SemiBold)
                     }
                     Button(
@@ -133,7 +134,7 @@ fun StepsScreen(
                             }
                         },
                         enabled = canPublish && !publishing,
-                        modifier = Modifier.weight(1f).height(50.dp), shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f).height(50.dp).guideFlowAnchor("portal_publish"), shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
                     ) { Text("Publish", fontWeight = FontWeight.SemiBold) }
                 }
