@@ -25,11 +25,11 @@ The system has five parts: the SDK (`guideflow-sdk`), a demo host app (`app`), t
 - `Modifier.guideFlowAnchor("key")` to mark any composable as a target.
 - Advance-on-tap steps: the highlighted element stays interactive, so one tap runs the app's own action and advances the tour (no Next button on that step). The rest of the screen is blocked while a step is active.
 - Automatic modal fallback when an anchor is missing on screen, plus an anchor-missing callback. The SDK does not crash the host app.
-- Per-flow theming with separate light and dark designs (chosen by the device theme): accent and button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom button labels, a customizable step-counter format, font family, and text size.
+- Per-flow theming with separate light and dark designs (chosen by the device theme): accent and button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom button labels, a customizable step-counter format, and text size. The font follows the host app's own theme.
 - One-request remote config (`GET /api/client/config`) with `304 Not Modified` based on config version.
 - Offline cache in DataStore. A failed refresh keeps the last good config.
 - Analytics: flow and step events are queued locally (Room) and uploaded in the background (WorkManager); the backend aggregates per-flow summaries shown in the portal as a completion rate, metric tiles, and a per-step view chart.
-- Authoring portal with Google Sign-In, project and flow management (create, rename, duplicate, delete), a step editor with a live themed preview, an appearance editor for the per-flow theme, publish-time validation, and a per-flow analytics view.
+- Authoring portal with Google Sign-In, project management (create and delete) and flow management (create, rename, duplicate, delete), a step editor with a live themed preview, an appearance editor for the per-flow theme, publish-time validation, and a per-flow analytics view.
 - Security: Firebase ID-token verification, per-request project-ownership checks, SHA-256 hashed project keys, and hashed SDK user IDs.
 
 ## Implementation

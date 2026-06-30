@@ -59,6 +59,10 @@ class PortalApi(
             authorize(token); contentType(ContentType.Application.Json); setBody(CreateProjectRequest(name))
         }.body()
 
+    suspend fun deleteProject(projectId: String, token: String?) {
+        http.delete("$baseUrl/api/projects/$projectId") { authorize(token) }
+    }
+
     // --- flows ---
     suspend fun listFlows(projectId: String, token: String?): List<TutorialFlow> =
         http.get("$baseUrl/api/projects/$projectId/flows") { authorize(token) }.body()

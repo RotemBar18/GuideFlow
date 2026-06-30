@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.SectionLabel
-import com.guideflow.portal.ui.fontFamilyOf
 import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.TutorialFlow
 import com.guideflow.shared.progressText
@@ -114,7 +113,7 @@ fun AppearanceScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
-                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.nextLabel, cur.skipLabel, cur.progressText(1, 3), cur.showProgress, cur.showSkip, cur.rtl, fontFamilyOf(cur.fontFamily), cur.titleSize, cur.bodySize)
+                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.nextLabel, cur.skipLabel, cur.progressText(1, 3), cur.showProgress, cur.showSkip, cur.rtl, cur.titleSize, cur.bodySize)
             }
 
             Column(
@@ -132,6 +131,7 @@ fun AppearanceScreen(
                 Text("Applies to both light and dark.", color = Gf.textFaint, fontSize = 11.sp)
 
                 // ---- The Next/Done button ----
+                SectionDivider()
                 SectionLabel("Next / Done button")
                 Text(
                     "One button: it reads your Next label on every step and your Done label on the last step.",
@@ -167,26 +167,16 @@ fun AppearanceScreen(
                 Slider(value = cur.dimOpacity, onValueChange = { set(cur.copy(dimOpacity = it)) }, valueRange = 0.2f..0.9f)
 
                 // ---- Typography ----
-                SectionLabel("Typography")
-                Text("Font", color = Gf.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Default" to "Default", "SansSerif" to "Sans", "Serif" to "Serif", "Monospace" to "Mono").forEach { (value, label) ->
-                        val sel = cur.fontFamily == value
-                        Box(
-                            Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                                .background(if (sel) Gf.primary else Gf.chipBg)
-                                .clickable { set(cur.copy(fontFamily = value)) }
-                                .padding(vertical = 9.dp),
-                            contentAlignment = Alignment.Center,
-                        ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
-                    }
-                }
+                SectionDivider()
+                SectionLabel("Text size")
+                Text("Font follows the host app's theme.", color = Gf.textFaint, fontSize = 11.sp)
                 Text("Title size  ${cur.titleSize}sp", color = Gf.textSecondary, fontSize = 12.sp)
                 Slider(value = cur.titleSize.toFloat(), onValueChange = { set(cur.copy(titleSize = it.roundToInt())) }, valueRange = 12f..30f)
                 Text("Body size  ${cur.bodySize}sp", color = Gf.textSecondary, fontSize = 12.sp)
                 Slider(value = cur.bodySize.toFloat(), onValueChange = { set(cur.copy(bodySize = it.roundToInt())) }, valueRange = 10f..24f)
 
                 // ---- Progress ----
+                SectionDivider()
                 SectionLabel("Progress")
                 ToggleRow("Show step counter", cur.showProgress) { set(cur.copy(showProgress = it)) }
                 OutlinedTextField(cur.progressFormat, { set(cur.copy(progressFormat = it)) }, singleLine = true,
@@ -227,6 +217,11 @@ private fun SwatchRow(options: List<String>, selected: String?, onPick: (String)
 }
 
 @Composable
+private fun SectionDivider() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Gf.border))
+}
+
+@Composable
 private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = Gf.textPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
@@ -238,7 +233,7 @@ private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit
 private fun ThemedPreview(
     accent: Color, buttonTextColor: Color, cardColor: Color, textColor: Color, dim: Float, corner: Int,
     nextLabel: String, skipLabel: String, progressText: String, showProgress: Boolean, showSkip: Boolean, rtl: Boolean,
-    fontFamily: androidx.compose.ui.text.font.FontFamily, titleSize: Int, bodySize: Int,
+    titleSize: Int, bodySize: Int,
 ) {
     Box(
         Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)),
@@ -250,10 +245,10 @@ private fun ThemedPreview(
                 Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(16.dp),
             ) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontFamily = fontFamily, fontSize = titleSize.sp, modifier = Modifier.weight(1f))
-                    if (showSkip) Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontFamily = fontFamily, fontSize = 13.sp)
+                    Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontSize = titleSize.sp, modifier = Modifier.weight(1f))
+                    if (showSkip) Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
                 }
-                Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontFamily = fontFamily, fontSize = bodySize.sp)
+                Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontSize = bodySize.sp)
                 if (showProgress) {
                     Spacer(Modifier.height(8.dp))
                     Text(progressText, color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)

@@ -68,6 +68,19 @@ class FirestoreStore(
         projects.whereEqualTo("projectKeyHash", keyHash).get().get()
             .documents.firstOrNull()?.toProjectRecord()
 
+    override fun deleteProject(projectId: String): Boolean {
+        if (projects.document(projectId).get().get().exists().not()) return false
+        flows.whereEqualTo("projectId", projectId).get().get().documents.forEach { flowDoc ->
+            steps.whereEqualTo("flowId", flowDoc.id).get().get().documents.forEach { it.reference.delete().get() }
+            summaries.document(flowDoc.id).delete().get()
+            flowDoc.reference.delete().get()
+        }
+        events.whereEqualTo("projectId", projectId).get().get().documents.forEach { it.reference.delete().get() }
+        publishedConfigs.document(projectId).delete().get()
+        projects.document(projectId).delete().get()
+        return true
+    }
+
     // --- flows ---------------------------------------------------------------
 
     override fun createFlow(projectId: String, flowKey: String, name: String): FlowRecord {

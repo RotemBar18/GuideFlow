@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.InfoBanner
-import com.guideflow.portal.ui.fontFamilyOf
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.portal.ui.typeBlurb
 import com.guideflow.portal.ui.typeColors
@@ -332,15 +331,14 @@ private fun PreviewCard(
     accent: Color, buttonText: Color, cardColor: Color, textColor: Color,
     isFirst: Boolean, nextLabel: String, stepIndex: Int, totalSteps: Int, advanceByTap: Boolean,
 ) {
-    val font = fontFamilyOf(theme.fontFamily)
     Column(Modifier.fillMaxWidth(0.82f).clip(RoundedCornerShape(theme.cornerRadius.dp)).background(cardColor).padding(13.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, color = textColor, fontWeight = FontWeight.Bold, fontFamily = font, fontSize = theme.titleSize.sp, modifier = Modifier.weight(1f))
-            if (theme.showSkip && stepIndex < totalSteps - 1) Text(theme.skipLabel, color = textColor.copy(alpha = 0.7f), fontFamily = font, fontSize = 11.sp)
+            Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = theme.titleSize.sp, modifier = Modifier.weight(1f))
+            if (theme.showSkip && stepIndex < totalSteps - 1) Text(theme.skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 11.sp)
         }
         if (body.isNotBlank()) {
             Spacer(Modifier.height(5.dp))
-            Text(body, color = textColor.copy(alpha = 0.7f), fontFamily = font, fontSize = theme.bodySize.sp, lineHeight = (theme.bodySize + 4).sp, maxLines = 3)
+            Text(body, color = textColor.copy(alpha = 0.7f), fontSize = theme.bodySize.sp, lineHeight = (theme.bodySize + 4).sp, maxLines = 3)
         }
         if (theme.showProgress) {
             Spacer(Modifier.height(8.dp))

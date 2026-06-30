@@ -48,14 +48,12 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
     val theme = state.activeTheme()
     // Apply RTL to the text content only; overlay placement stays LTR (see GuideFlowHost).
     val dir = if (state.flow.theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
-    val fontFamily = theme.fontFamilyOrDefault()
     CompositionLocalProvider(LocalLayoutDirection provides dir) {
     Column(modifier) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 step.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontFamily = fontFamily,
                 fontSize = theme.titleSize.sp,
                 modifier = Modifier.weight(1f),
             )
@@ -63,17 +61,16 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                 TextButton(
                     onClick = { coordinator.skip() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.SKIP),
-                ) { Text(theme.skipLabel, fontFamily = fontFamily) }
+                ) { Text(theme.skipLabel) }
             }
         }
         Spacer(Modifier.height(6.dp))
-        Text(step.body, style = MaterialTheme.typography.bodyMedium, fontFamily = fontFamily, fontSize = theme.bodySize.sp)
+        Text(step.body, style = MaterialTheme.typography.bodyMedium, fontSize = theme.bodySize.sp)
         if (theme.showProgress) {
             Spacer(Modifier.height(10.dp))
             Text(
                 theme.progressText(state.currentStepIndex + 1, state.totalSteps),
                 style = MaterialTheme.typography.labelSmall,
-                fontFamily = fontFamily,
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -85,7 +82,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                 TextButton(
                     onClick = { coordinator.back() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.BACK),
-                ) { Text(theme.backLabel, fontFamily = fontFamily) }
+                ) { Text(theme.backLabel) }
             }
             Spacer(Modifier.weight(1f))
             if (advanceByTap) {
@@ -100,7 +97,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                         contentColor = theme.buttonTextColorOrDefault(),
                     ),
                 ) {
-                    Text(if (state.isLastStep) theme.doneLabel else theme.nextLabel, fontFamily = fontFamily)
+                    Text(if (state.isLastStep) theme.doneLabel else theme.nextLabel)
                 }
             }
         }

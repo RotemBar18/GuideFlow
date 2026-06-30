@@ -24,7 +24,7 @@ The backend is deployed on Google Cloud Run and works from any network:
 - An anchor system: tag any composable with `Modifier.guideFlowAnchor("key")` and steps target it by key.
 - Advance-on-tap steps: the highlighted element stays interactive, so tapping it both runs the app's own action (for example navigation) and advances the tour. That step shows no Next button. While a step is active the rest of the screen is blocked, so the user cannot wander off the tour.
 - Missing-anchor fallback: a tooltip or spotlight whose anchor is not on screen falls back to a modal and emits an anchor-missing callback. The SDK does not crash the host app.
-- Per-flow theming, with separate light and dark designs selected by the device theme: accent colour, button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom Next/Back/Skip/Done labels, a customizable step-counter format, font family, and title/body text size.
+- Per-flow theming, with separate light and dark designs selected by the device theme: accent colour, button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom Next/Back/Skip/Done labels, a customizable step-counter format, and title/body text size. The font follows the host app's own theme.
 - One-request remote config (`GET /api/client/config`), with `304 Not Modified` based on config version.
 - Offline cache in DataStore. A failed refresh keeps the previous config.
 - Analytics: the SDK records flow and step events into a Room queue and uploads them with WorkManager (deleting only events the server acknowledges); the backend aggregates per-flow summaries that the portal displays as a completion rate, metric tiles, and a per-step view chart.
@@ -82,7 +82,6 @@ SDK overlays in the demo app:
         "accentColor": "#4F5BD5",
         "rtl": false,
         "cornerRadius": 14,
-        "fontFamily": "Default",
         "titleSize": 16,
         "bodySize": 14,
         "nextLabel": "Next",
@@ -201,6 +200,7 @@ Portal endpoints require `Authorization: Bearer <Firebase ID token>` and enforce
 | POST | `/api/projects` | Bearer | Create project; returns project and raw key (once) |
 | GET | `/api/projects` | Bearer | List the caller's projects |
 | GET | `/api/projects/{projectId}` | Bearer | Get one project |
+| DELETE | `/api/projects/{projectId}` | Bearer | Delete a project and all its flows, steps, and analytics |
 | POST | `/api/projects/{projectId}/flows` | Bearer | Create a flow |
 | GET | `/api/projects/{projectId}/flows` | Bearer | List flows |
 | GET | `/api/flows/{flowId}` | Bearer | Get a flow with steps |

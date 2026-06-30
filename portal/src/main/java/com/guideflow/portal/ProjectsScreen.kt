@@ -72,6 +72,7 @@ fun ProjectsScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var showCreate by remember { mutableStateOf(false) }
     var revealedKey by remember { mutableStateOf<String?>(null) }
+    var deleteTarget by remember { mutableStateOf<ProjectDto?>(null) }
 
     suspend fun reload() {
         loading = true; error = null
@@ -122,7 +123,9 @@ fun ProjectsScreen(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(projects, key = { it.projectId }) { p -> ProjectCard(p) { onOpenProject(p) } }
+                    items(projects, key = { it.projectId }) { p ->
+                        ProjectCard(p, onClick = { onOpenProject(p) }, onDelete = { deleteTarget = p })
+                    }
                 }
             }
         }
@@ -149,14 +152,46 @@ fun ProjectsScreen(
             onDismiss = { revealedKey = null },
         )
     }
+
+    deleteTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Delete project?", fontWeight = FontWeight.Bold) },
+            text = { Text("\"${target.name}\", all its flows, steps, and analytics will be permanently deleted. Apps using its project key will stop receiving config.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        deleteTarget = null
+                        scope.launch {
+                            runCatching { api.deleteProject(target.projectId, getToken()) }
+                                .onSuccess { reload() }
+                                .onFailure { error = it.message ?: "Failed to delete project" }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Gf.errorFg),
+                ) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
+        )
+    }
 }
 
 @Composable
-private fun ProjectCard(project: ProjectDto, onClick: () -> Unit) {
+private fun ProjectCard(project: ProjectDto, onClick: () -> Unit, onDelete: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
     GfCard(Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(project.name, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Box {
+                    Text(
+                        "⋮", color = Gf.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { menu = true }.padding(horizontal = 6.dp),
+                    )
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
+                    }
+                }
                 Text("›", color = Gf.textFaint, fontSize = 18.sp)
             }
             Spacer(Modifier.height(8.dp))

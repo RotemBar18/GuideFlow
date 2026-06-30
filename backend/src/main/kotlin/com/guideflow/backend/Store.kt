@@ -45,6 +45,8 @@ interface GuideFlowStore {
     fun listProjects(ownerUid: String): List<ProjectRecord>
     fun getProject(projectId: String): ProjectRecord?
     fun findProjectByKeyHash(keyHash: String): ProjectRecord?
+    /** Delete a project and everything under it (flows, steps, published config, analytics). */
+    fun deleteProject(projectId: String): Boolean
 
     fun createFlow(projectId: String, flowKey: String, name: String): FlowRecord
     fun listFlows(projectId: String): List<FlowRecord>
@@ -103,6 +105,15 @@ class InMemoryStore : GuideFlowStore {
 
     override fun findProjectByKeyHash(keyHash: String): ProjectRecord? = synchronized(lock) {
         projects.values.firstOrNull { it.projectKeyHash == keyHash }
+    }
+
+    override fun deleteProject(projectId: String): Boolean = synchronized(lock) {
+        if (projects.remove(projectId) == null) return@synchronized false
+        flows.values.filter { it.projectId == projectId }.map { it.flowId }.forEach {
+            flows.remove(it); summaries.remove(it)
+        }
+        publishedConfigs.remove(projectId)
+        true
     }
 
     override fun recordEvents(projectId: String, events: List<AnalyticsEvent>): List<String> = synchronized(lock) {

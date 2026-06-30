@@ -82,6 +82,13 @@ private fun io.ktor.server.routing.Route.projectRoutes(store: GuideFlowStore, au
             val owner = call.owner(auth)
             call.respond(store.assertProjectOwned(call.pathParam("projectId"), owner).toDto())
         }
+        delete("/{projectId}") {
+            val owner = call.owner(auth)
+            val projectId = call.pathParam("projectId")
+            store.assertProjectOwned(projectId, owner)
+            store.deleteProject(projectId)
+            call.respond(HttpStatusCode.NoContent)
+        }
         post("/{projectId}/flows") {
             val owner = call.owner(auth)
             val projectId = call.pathParam("projectId")
