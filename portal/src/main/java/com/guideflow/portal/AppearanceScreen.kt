@@ -102,30 +102,36 @@ fun AppearanceScreen(
             }
         },
     ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            // Light / Dark variant switcher
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F3)).padding(3.dp)) {
-                listOf(false to "Light", true to "Dark").forEach { (isDark, label) ->
-                    val sel = editingDark == isDark
-                    Box(
-                        Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
-                            .background(if (sel) Gf.primary else Color.Transparent)
-                            .clickable { editingDark = isDark }.padding(vertical = 9.dp),
-                        contentAlignment = Alignment.Center,
-                    ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp) }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            // Pinned: variant switcher + live preview (stays visible while you scroll the controls).
+            Column(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F3)).padding(3.dp)) {
+                    listOf(false to "Light", true to "Dark").forEach { (isDark, label) ->
+                        val sel = editingDark == isDark
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
+                                .background(if (sel) Gf.primary else Color.Transparent)
+                                .clickable { editingDark = isDark }.padding(vertical = 9.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp) }
+                    }
                 }
+                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.doneLabel, cur.skipLabel, cur.showProgress, cur.showSkip)
             }
-            Text(
-                "Editing the ${if (editingDark) "DARK" else "LIGHT"} design, shown automatically based on the device theme. Card and text follow the device; you set the accent and button-text color.",
-                color = Gf.textMuted, fontSize = 11.5.sp,
-            )
 
-            ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.doneLabel, cur.skipLabel, cur.showProgress, cur.showSkip)
-
-            SectionLabel("Accent color")
+            // Scrollable controls.
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Text(
+                    "Editing the ${if (editingDark) "DARK" else "LIGHT"} design, shown automatically based on the device theme. Card and text follow the device; you set the accent and button-text color.",
+                    color = Gf.textMuted, fontSize = 11.5.sp,
+                )
+                SectionLabel("Accent color")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SWATCHES.forEach { hex ->
                     Box(
@@ -166,6 +172,7 @@ fun AppearanceScreen(
             ToggleRow("Show step progress", cur.showProgress) { set(cur.copy(showProgress = it)) }
             ToggleRow("Show skip button", cur.showSkip) { set(cur.copy(showSkip = it)) }
             Spacer(Modifier.height(8.dp))
+            }
         }
     }
 }
