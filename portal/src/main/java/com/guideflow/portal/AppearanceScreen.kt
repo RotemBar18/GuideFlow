@@ -80,6 +80,14 @@ fun AppearanceScreen(
     val cardColor = parseColorOrNull(cur.backgroundColor) ?: if (editingDark) Color(0xFF1B1F27) else Color.White
     val txtColor = if (editingDark) Color.White else Gf.ink
 
+    // Preview a real step from the flow, and a middle position so the Back button shows.
+    val previewIdx = if (flow.steps.size >= 2) 1 else 0
+    val previewStep = flow.steps.getOrNull(previewIdx)
+    val previewTitle = previewStep?.title?.takeIf { it.isNotBlank() } ?: "Step title"
+    val previewBody = previewStep?.body?.takeIf { it.isNotBlank() } ?: "Your step text appears here."
+    val previewTotal = flow.steps.size.coerceAtLeast(1)
+    val previewNumber = previewIdx + 1
+
     Scaffold(
         containerColor = Gf.surface,
         topBar = { DetailHeader(backLabel = flow.name, title = "Appearance", onBack = onBack) },
@@ -113,7 +121,7 @@ fun AppearanceScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
-                ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.nextLabel, cur.skipLabel, cur.progressText(1, 3), cur.showProgress, cur.showSkip, cur.rtl, cur.titleSize, cur.bodySize)
+                ThemedPreview(cur, accentColor, buttonTextColor, cardColor, txtColor, previewTitle, previewBody, previewNumber, previewTotal)
             }
 
             Column(
@@ -232,34 +240,40 @@ private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit
 
 @Composable
 private fun ThemedPreview(
-    accent: Color, buttonTextColor: Color, cardColor: Color, textColor: Color, dim: Float, corner: Int,
-    nextLabel: String, skipLabel: String, progressText: String, showProgress: Boolean, showSkip: Boolean, rtl: Boolean,
-    titleSize: Int, bodySize: Int,
+    theme: FlowTheme,
+    accent: Color, buttonTextColor: Color, cardColor: Color, textColor: Color,
+    title: String, body: String, stepNumber: Int, totalSteps: Int,
 ) {
+    val isFirst = stepNumber <= 1
+    val isLast = stepNumber >= totalSteps
     Box(
         Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)),
         contentAlignment = Alignment.Center,
     ) {
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)))
-        CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = theme.dimOpacity)))
+        CompositionLocalProvider(LocalLayoutDirection provides if (theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
             Column(
-                Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(16.dp),
+                Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(theme.cornerRadius.dp)).background(cardColor).padding(16.dp),
             ) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontSize = titleSize.sp, modifier = Modifier.weight(1f))
-                    if (showSkip) Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
+                    Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = theme.titleSize.sp, maxLines = 1, modifier = Modifier.weight(1f))
+                    if (theme.showSkip && !isLast) Text(theme.skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
                 }
-                Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontSize = bodySize.sp)
-                if (showProgress) {
+                if (body.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(body, color = textColor.copy(alpha = 0.7f), fontSize = theme.bodySize.sp, maxLines = 2)
+                }
+                if (theme.showProgress) {
                     Spacer(Modifier.height(8.dp))
-                    Text(progressText, color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)
+                    Text(theme.progressText(stepNumber, totalSteps), color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (theme.showBack && !isFirst) Text(theme.backLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
                     Spacer(Modifier.weight(1f))
                     Box(
                         Modifier.clip(RoundedCornerShape(10.dp)).background(accent).padding(horizontal = 18.dp, vertical = 8.dp),
-                    ) { Text(nextLabel, color = buttonTextColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    ) { Text(if (isLast) theme.doneLabel else theme.nextLabel, color = buttonTextColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                 }
             }
         }
