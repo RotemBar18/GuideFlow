@@ -92,6 +92,16 @@ object GuideFlow {
         this.localFlows = flows
     }
 
+    /**
+     * All flows the SDK can start: remote (published) flows plus any local flows
+     * whose key remote doesn't define. Useful for building a flow picker in a demo.
+     */
+    fun availableFlows(): List<TutorialFlow> {
+        val remote = repository?.currentFlows().orEmpty()
+        val remoteKeys = remote.map { it.flowKey }.toSet()
+        return remote + localFlows.filter { it.flowKey !in remoteKeys }
+    }
+
     /** Fetch the latest published config from the backend. */
     suspend fun refreshConfig(): Result<Unit> {
         val repo = repository ?: return Result.failure(GuideFlowException(GuideFlowError.NotInitialized))
