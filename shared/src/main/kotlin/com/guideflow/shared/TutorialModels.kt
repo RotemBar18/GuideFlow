@@ -39,9 +39,11 @@ data class TutorialStep(
  */
 @Serializable
 data class FlowTheme(
-    val accentColor: String? = null,   // "#RRGGBB"; null = SDK default accent
-    val dimOpacity: Float = 0.6f,      // 0..1, spotlight/modal scrim darkness
-    val cornerRadius: Int = 14,        // dp for cards/bubbles
+    val accentColor: String? = null,       // "#RRGGBB"; null = SDK default accent
+    val backgroundColor: String? = null,   // card background; null = follow host light/dark theme
+    val textColor: String? = null,         // title/body text; null = follow host theme
+    val dimOpacity: Float = 0.6f,          // 0..1, spotlight/modal scrim darkness
+    val cornerRadius: Int = 14,            // dp for cards/bubbles
     val nextLabel: String = "Next",
     val skipLabel: String = "Skip",
     val doneLabel: String = "Done",

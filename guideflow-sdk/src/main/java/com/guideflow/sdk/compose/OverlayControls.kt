@@ -16,6 +16,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -31,15 +32,17 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
     val coordinator = GuideFlow.coordinator
     val step = state.currentStep
     val theme = state.flow.theme
+    val textColor = theme.textColorOrNull() ?: Color.Unspecified
     Column(modifier) {
-        Text(step.title, style = MaterialTheme.typography.titleMedium)
+        Text(step.title, style = MaterialTheme.typography.titleMedium, color = textColor)
         Spacer(Modifier.height(6.dp))
-        Text(step.body, style = MaterialTheme.typography.bodyMedium)
+        Text(step.body, style = MaterialTheme.typography.bodyMedium, color = textColor)
         if (theme.showProgress) {
             Spacer(Modifier.height(10.dp))
             Text(
                 "Step ${state.currentStepIndex + 1} of ${state.totalSteps}",
                 style = MaterialTheme.typography.labelSmall,
+                color = textColor,
             )
         }
         Spacer(Modifier.height(12.dp))

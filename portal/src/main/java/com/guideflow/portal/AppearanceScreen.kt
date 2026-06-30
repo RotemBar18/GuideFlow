@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -51,6 +52,9 @@ private val SWATCHES = listOf("#4F5BD5", "#0F9D58", "#D64545", "#B45309", "#7C3A
 private fun parseColor(hex: String): Color =
     runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Gf.primary)
 
+private fun parseColorOrNull(hex: String): Color? =
+    hex.ifBlank { null }?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
+
 @Composable
 fun AppearanceScreen(
     api: PortalApi,
@@ -61,6 +65,8 @@ fun AppearanceScreen(
     val scope = rememberCoroutineScope()
     val t = flow.theme
     var accent by remember { mutableStateOf(t.accentColor ?: "#4F5BD5") }
+    var bg by remember { mutableStateOf(t.backgroundColor ?: "") }
+    var textC by remember { mutableStateOf(t.textColor ?: "") }
     var dim by remember { mutableFloatStateOf(t.dimOpacity) }
     var corner by remember { mutableFloatStateOf(t.cornerRadius.toFloat()) }
     var nextL by remember { mutableStateOf(t.nextLabel) }
@@ -72,6 +78,8 @@ fun AppearanceScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     val accentColor = parseColor(accent)
+    val cardColor = parseColorOrNull(bg) ?: Color.White
+    val txtColor = parseColorOrNull(textC) ?: Gf.ink
 
     Scaffold(
         containerColor = Gf.surface,
@@ -84,6 +92,8 @@ fun AppearanceScreen(
                         saving = true; error = null
                         val theme = FlowTheme(
                             accentColor = accent.trim().ifBlank { null },
+                            backgroundColor = bg.trim().ifBlank { null },
+                            textColor = textC.trim().ifBlank { null },
                             dimOpacity = dim,
                             cornerRadius = corner.roundToInt(),
                             nextLabel = nextL.ifBlank { "Next" },
@@ -113,7 +123,7 @@ fun AppearanceScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            ThemedPreview(accentColor, dim, corner.roundToInt(), doneL, skipL, showProgress, showSkip)
+            ThemedPreview(accentColor, cardColor, txtColor, dim, corner.roundToInt(), doneL, skipL, showProgress, showSkip)
 
             SectionLabel("Accent color")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -135,6 +145,14 @@ fun AppearanceScreen(
 
             SectionLabel("Corner radius  ${corner.roundToInt()}dp")
             Slider(value = corner, onValueChange = { corner = it }, valueRange = 0f..28f)
+
+            SectionLabel("Card & text — blank follows the app's light/dark theme")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { bg = "#1B1F27"; textC = "#FFFFFF" }) { Text("Night") }
+                OutlinedButton(onClick = { bg = ""; textC = "" }) { Text("Follow app") }
+            }
+            OutlinedTextField(value = bg, onValueChange = { bg = it }, singleLine = true, label = { Text("Card background hex") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = textC, onValueChange = { textC = it }, singleLine = true, label = { Text("Text color hex") }, modifier = Modifier.fillMaxWidth())
 
             SectionLabel("Button labels")
             OutlinedTextField(value = nextL, onValueChange = { nextL = it }, singleLine = true, label = { Text("Next") }, modifier = Modifier.fillMaxWidth())
@@ -158,8 +176,8 @@ private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit
 
 @Composable
 private fun ThemedPreview(
-    accent: Color, dim: Float, corner: Int, doneLabel: String, skipLabel: String,
-    showProgress: Boolean, showSkip: Boolean,
+    accent: Color, cardColor: Color, textColor: Color, dim: Float, corner: Int,
+    doneLabel: String, skipLabel: String, showProgress: Boolean, showSkip: Boolean,
 ) {
     Box(
         Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)),
@@ -167,17 +185,17 @@ private fun ThemedPreview(
     ) {
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)))
         Column(
-            Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(corner.dp)).background(Color.White).padding(16.dp),
+            Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(16.dp),
         ) {
-            Text("Welcome", color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Text("This is how your tutorial looks.", color = Gf.textMuted, fontSize = 12.sp)
+            Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontSize = 12.sp)
             if (showProgress) {
                 Spacer(Modifier.height(8.dp))
-                Text("Step 1 of 3", color = Gf.textFaint, fontSize = 11.sp)
+                Text("Step 1 of 3", color = textColor.copy(alpha = 0.55f), fontSize = 11.sp)
             }
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (showSkip) Text(skipLabel, color = Gf.textSecondary, fontSize = 13.sp)
+                if (showSkip) Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
                 Spacer(Modifier.weight(1f))
                 Box(
                     Modifier.clip(RoundedCornerShape(10.dp)).background(accent).padding(horizontal = 18.dp, vertical = 8.dp),

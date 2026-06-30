@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +30,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
         val yPx = (anchor.bounds.bottom + 16f)
             .coerceAtMost(maxHeightPx - 240f)
             .coerceAtLeast(0f)
+        val bg = state.flow.theme.backgroundColorOrNull()
         Card(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -37,6 +39,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                 .widthIn(max = 360.dp)
                 .testTag(GuideFlowOverlayTags.TOOLTIP),
             shape = RoundedCornerShape(state.flow.theme.cornerRadius.dp),
+            colors = if (bg != null) CardDefaults.cardColors(containerColor = bg) else CardDefaults.cardColors(),
         ) {
             StepControls(state, Modifier.padding(16.dp))
         }
