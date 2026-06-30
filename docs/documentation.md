@@ -122,15 +122,17 @@ The string must match the step's `anchorKey` set in the portal.
 GuideFlow.startFlow("budget_tutorial")   // flowKey from the portal
 ```
 
-The overlay renders over `GuideFlowHost`, and the user advances with Next, Back, Skip, and Done. If `refreshConfig()` has not loaded a flow with that key, `startFlow` falls back to any flows supplied via `loadLocalFlows(...)`, and otherwise reports `FlowNotFound` through the listener.
+The overlay renders over `GuideFlowHost`, and the user advances with Next, Back, Skip, and Done. Remote (published) flows win per key; any key that remote does not define falls back to a flow supplied via `loadLocalFlows(...)`. A flow keeps running across screen navigation, so a step can continue on the next page.
+
+The SDK never throws at the host app. Errors surface through the `Result` return, the listener (`onError`, `onAnchorMissing`), and, when `GuideFlowConfig(debugLogging = true)` is set, actionable Logcat messages under the tag `GuideFlow` (a wrong flow key prints the known keys; a missing anchor prints which `guideFlowAnchor(...)` to add). A missing anchor shows the modal fallback rather than failing.
 
 ### Authoring a tutorial (portal)
 
 1. Open the portal app and sign in with Google.
 2. Create a project, then copy the `gf_...` key into your app's `initialize(...)` call. It is shown once.
-3. Add a flow and give it a flowKey such as `budget_tutorial`. From the flow list you can also rename, duplicate, or delete a flow; duplicating copies its steps and both themes into a new draft, which is handy for making a translated or right-to-left variant.
+3. Add a flow and give it a flowKey such as `budget_tutorial`. From the flow list you can also rename, duplicate, or delete a flow; duplicating opens a dialog to choose the new display name and flow key, then copies the steps and both themes into a new draft (handy for a translated or right-to-left variant). Projects themselves can be created and deleted from the projects list.
 4. Add steps: pick the type, set the anchor key (for tooltip and spotlight), title, and body. A live preview shows the step exactly as it will render, including the flow's theme, and you can toggle light or dark. For a tooltip or spotlight you can turn on "advance when the user taps the element".
-5. Open the appearance editor to set the per-flow theme: colours, corner radius, dim, right-to-left layout, button labels, step-counter format, font, and text size, each with a light and a dark variant.
+5. Open the appearance editor to set the per-flow theme: colours, corner radius, dim, right-to-left layout, button labels (and a Show-back toggle for flows that change screens), step-counter format, and text size, each with a light and a dark variant. The font follows the host app.
 6. Publish. Publishing validates the flow (at least one step, unique order, anchors present for tooltip and spotlight), then the flow goes live and the SDK downloads it on the next `refreshConfig()` or app launch.
 
 ### Theming and advance-on-tap (how it works end to end)
