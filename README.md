@@ -113,6 +113,12 @@ steps/{stepId}
 
 publishedConfigs/{projectId}
   { json }   // the compiled TutorialConfig above, as a JSON string
+
+events/{eventId}
+  { eventId, projectId, flowId, stepId, eventType, ... }   // analytics, idempotent by eventId
+
+analyticsSummaries/{flowId}
+  { flowId, started, completed, skipped, anchorMissing, stepViews }   // aggregated per flow
 ```
 
 Project keys are never stored raw. Only `projectKeyHash` (SHA-256) is stored; the raw `gf_...` key is shown once at creation.
@@ -236,10 +242,12 @@ flowchart TD
         FBAuth["Firebase Auth"]
     end
 
-    Portal["Portal app (authoring)"] -->|Google Sign-In| FBAuth
+    Portal["Portal app (authoring + GuideFlow SDK for its own tour)"] -->|Google Sign-In| FBAuth
     Portal -->|Bearer ID token: create, publish| Backend
+    Portal -->|Project key: load self-tour config| Backend
 
     HostApp["Host app + GuideFlow SDK"] -->|Project key: GET /api/client/config| Backend
+    HostApp -->|Project key: POST analytics batch| Backend
 
     Backend -->|verify ID token| FBAuth
     Backend -->|Firebase Admin SDK| FS
@@ -252,6 +260,8 @@ erDiagram
     PROJECT ||--o{ FLOW : has
     FLOW ||--o{ STEP : contains
     PROJECT ||--o| PUBLISHED_CONFIG : compiles_to
+    PROJECT ||--o{ EVENT : collects
+    FLOW ||--o| ANALYTICS_SUMMARY : aggregates_to
 
     PROJECT {
         string projectId PK
@@ -284,11 +294,25 @@ erDiagram
         string projectId PK
         string json
     }
+    EVENT {
+        string eventId PK
+        string projectId FK
+        string flowId
+        string stepId
+        string eventType
+    }
+    ANALYTICS_SUMMARY {
+        string flowId PK
+        int started
+        int completed
+        int skipped
+        int anchorMissing
+    }
 ```
 
-## Quick start
+## Quick start (use the SDK)
 
-Use the SDK in a host app:
+The backend is already hosted on Cloud Run, so adopting the SDK needs no server setup: add the library, point `baseUrl` at the hosted URL, and use a project key from the portal.
 
 ```kotlin
 GuideFlow.initialize(
@@ -306,18 +330,23 @@ setContent {
 GuideFlow.startFlow("budget_tutorial")    // run a published tutorial
 ```
 
-Run the system locally:
+That is the whole integration. Open the **portal app**, sign in, create a project, author a flow, and publish; the host app picks it up on the next `refreshConfig()`.
+
+## Running the whole stack yourself (optional)
+
+Only needed if you want to run your own backend instead of the hosted one (for example to grade or extend the project):
 
 ```bash
-# Backend in dev mode (in-memory, no auth)
+# Backend in dev mode (in-memory store, no auth)
 ./gradlew :backend:run
-# Backend in Firebase mode (Firestore, token verification)
+# Backend with Firebase (Firestore + token verification)
 GUIDEFLOW_FIREBASE_CREDENTIALS="/path/to/serviceAccount.json" ./gradlew :backend:run
 
 # Apps (Android Studio): run :portal to author, run :app to see the SDK
+# If you run your own backend, set baseUrl accordingly in the app/portal.
 ```
 
-Deploy the backend to Google Cloud Run:
+Deploy your own backend to Google Cloud Run:
 
 ```bash
 gcloud run deploy guideflow-backend --source . --region me-west1 --allow-unauthenticated
@@ -331,11 +360,15 @@ Kotlin, Jetpack Compose, Ktor (client and server), kotlinx.serialization, DataSt
 
 ## Tests
 
-- SDK: FlowCoordinator unit tests, OverlayUiTest Compose UI tests, ConfigRepository tests.
-- Backend: BackendTest (create, publish, config, validation, auth) and FirestoreLiveTest (guarded live round-trip).
+- **SDK unit (JVM)**: `FlowCoordinatorTest` (start, next, back, skip, complete, sort-by-order, already-active guard) and `ConfigRepositoryTest` (refresh success, refresh failure keeps previous, 304 not-modified, cache disabled).
+- **SDK UI (instrumented, needs a device/emulator)**: `OverlayUiTest` (tooltip/spotlight/modal render, next advances, skip closes, done completes, missing-anchor modal fallback).
+- **Backend (JVM, in-memory store)**: `BackendTest` (create project + raw key, publish + validation of empty flow and anchor-less tooltip, client config, config version 304, unknown key 404, analytics batch updates summary). `FirestoreLiveTest` is a live create/publish/fetch round-trip, skipped unless Firebase credentials are set.
 
 ```bash
+# Unit/integration tests
 ./gradlew :guideflow-sdk:testDebugUnitTest :backend:test
+# UI tests (device/emulator connected)
+./gradlew :guideflow-sdk:connectedDebugAndroidTest
 ```
 
 ## License
