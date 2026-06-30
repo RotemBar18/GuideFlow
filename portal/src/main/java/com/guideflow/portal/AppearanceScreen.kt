@@ -80,14 +80,6 @@ fun AppearanceScreen(
     val cardColor = parseColorOrNull(cur.backgroundColor) ?: if (editingDark) Color(0xFF1B1F27) else Color.White
     val txtColor = if (editingDark) Color.White else Gf.ink
 
-    // Preview a real step from the flow, and a middle position so the Back button shows.
-    val previewIdx = if (flow.steps.size >= 2) 1 else 0
-    val previewStep = flow.steps.getOrNull(previewIdx)
-    val previewTitle = previewStep?.title?.takeIf { it.isNotBlank() } ?: "Step title"
-    val previewBody = previewStep?.body?.takeIf { it.isNotBlank() } ?: "Your step text appears here."
-    val previewTotal = flow.steps.size.coerceAtLeast(1)
-    val previewNumber = previewIdx + 1
-
     Scaffold(
         containerColor = Gf.surface,
         topBar = { DetailHeader(backLabel = flow.name, title = "Appearance", onBack = onBack) },
@@ -121,7 +113,7 @@ fun AppearanceScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
-                ThemedPreview(cur, accentColor, buttonTextColor, cardColor, txtColor, previewTitle, previewBody, previewNumber, previewTotal)
+                ThemedPreview(cur, accentColor, buttonTextColor, cardColor, txtColor, "Welcome", "This is how your tutorial looks.", 1, 3)
             }
 
             Column(
