@@ -48,7 +48,9 @@ private fun GuideFlowOverlay(state: ActiveFlowState) {
         }
     }
 
-    val dir = if (state.activeTheme().rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+    // RTL is content-driven (language), not appearance-driven, so read the base
+    // theme rather than the device's light/dark variant.
+    val dir = if (state.flow.theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
     CompositionLocalProvider(LocalLayoutDirection provides dir) {
         when {
             step.type == StepType.MODAL || anchorMissing -> ModalFallback(state)
