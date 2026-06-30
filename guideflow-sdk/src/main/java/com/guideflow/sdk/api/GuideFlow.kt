@@ -104,10 +104,10 @@ object GuideFlow {
      * back to [loadLocalFlows]. Errors are also reported via [setListener].
      */
     fun startFlow(flowKey: String): Result<Unit> {
+        // Remote config wins per key; local flows fill in any key remote doesn't have.
         val remote = repository?.currentFlows().orEmpty()
-        val flows = remote.ifEmpty { localFlows }
-
-        val flow = flows.firstOrNull { it.flowKey == flowKey }
+        val flow = remote.firstOrNull { it.flowKey == flowKey }
+            ?: localFlows.firstOrNull { it.flowKey == flowKey }
         if (flow == null) {
             val error = GuideFlowError.FlowNotFound(flowKey)
             listener?.onError(error)
