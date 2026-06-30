@@ -2,13 +2,17 @@ package com.guideflow.sdk.compose
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -21,13 +25,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.guideflow.sdk.api.GuideFlow
 import com.guideflow.sdk.flow.ActiveFlowState
 import com.guideflow.shared.progressText
+import kotlin.math.roundToInt
 
 /**
  * Title, body, step progress, and the Skip / Back / Next(Done) controls shared by
@@ -93,23 +100,20 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
 }
 
 /**
- * Swallow taps so the host UI can't be touched during a step. Runs in the Main
- * pass so the overlay's own controls (Back/Skip/Next) — which are children — get
- * the tap first; only taps that no control handled are blocked. When [hole] is
- * set (advance-on-tap steps), taps inside that rect are left unconsumed so they
- * reach the host element underneath.
+ * Block taps so the host UI can't be touched during a step. The overlay's own
+ * controls (Back/Skip/Next) are children, so they handle taps first (Main pass
+ * bubbles child→parent) and keep working. When [hole] is set (advance-on-tap),
+ * taps inside that rect are left unconsumed and [onHoleTap] fires.
+ *
+ * Uses a custom node that opts into [PointerInputModifierNode.sharePointerInputWithSiblings]
+ * so the host element under the hole actually receives the tap — a plain
+ * full-screen pointerInput would occlude it (scrims don't share with siblings).
  */
-internal fun Modifier.consumeTaps(hole: Rect? = null, onHoleTap: (() -> Unit)? = null): Modifier =
-    pointerInput(hole, onHoleTap) {
+internal fun Modifier.consumeTaps(): Modifier =
+    pointerInput(Unit) {
         awaitEachGesture {
-            // requireUnconsumed = true: if a control already handled this tap, skip it.
+            // requireUnconsumed = true so the overlay's own controls (children) win first.
             val down = awaitFirstDown(requireUnconsumed = true)
-            if (hole != null && hole.contains(down.position)) {
-                // Leave it unconsumed so the host element under the hole handles the
-                // tap (e.g. its onClick / navigation); use the same tap to advance.
-                if (waitForUpOrCancellation() != null) onHoleTap?.invoke()
-                return@awaitEachGesture
-            }
             down.consume()
             do {
                 val event = awaitPointerEvent()
@@ -117,3 +121,38 @@ internal fun Modifier.consumeTaps(hole: Rect? = null, onHoleTap: (() -> Unit)? =
             } while (event.changes.any { it.pressed })
         }
     }
+
+/**
+ * Blocks taps everywhere except inside [hole] (advance-on-tap steps), leaving that
+ * rectangle uncovered so the host element underneath actually receives the tap —
+ * its onClick runs and `Modifier.guideFlowAnchor` advances the flow. Built from four
+ * strips around the hole because a full-screen pointer scrim occludes the host element.
+ */
+@Composable
+internal fun HoleScrim(hole: Rect) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val density = LocalDensity.current
+        val wPx = with(density) { maxWidth.toPx() }
+        val hPx = with(density) { maxHeight.toPx() }
+        val top = hole.top.coerceIn(0f, hPx)
+        val bottom = hole.bottom.coerceIn(top, hPx)
+        val left = hole.left.coerceIn(0f, wPx)
+        val right = hole.right.coerceIn(left, wPx)
+        Strip(0f, 0f, wPx, top)                  // above the hole
+        Strip(0f, bottom, wPx, hPx - bottom)     // below
+        Strip(0f, top, left, bottom - top)       // left
+        Strip(right, top, wPx - right, bottom - top) // right
+    }
+}
+
+@Composable
+private fun Strip(xPx: Float, yPx: Float, wPx: Float, hPx: Float) {
+    if (wPx <= 0f || hPx <= 0f) return
+    val density = LocalDensity.current
+    Box(
+        Modifier
+            .offset { IntOffset(xPx.roundToInt(), yPx.roundToInt()) }
+            .size(with(density) { wPx.toDp() }, with(density) { hPx.toDp() })
+            .consumeTaps(),
+    )
+}
