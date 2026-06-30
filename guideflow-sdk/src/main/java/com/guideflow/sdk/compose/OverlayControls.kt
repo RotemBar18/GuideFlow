@@ -1,5 +1,7 @@
 package com.guideflow.sdk.compose
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,7 +19,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -91,16 +92,22 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
 }
 
 /**
- * Swallow taps so the host UI can't be touched during a step. When [hole] is set
- * (advance-on-tap steps), taps inside that rect pass through to the host element.
+ * Swallow taps so the host UI can't be touched during a step. Runs in the Main
+ * pass so the overlay's own controls (Back/Skip/Next) — which are children — get
+ * the tap first; only taps that no control handled are blocked. When [hole] is
+ * set (advance-on-tap steps), taps inside that rect are left unconsumed so they
+ * reach the host element underneath.
  */
 internal fun Modifier.consumeTaps(hole: Rect? = null): Modifier =
     pointerInput(hole) {
-        awaitPointerEventScope {
-            while (true) {
-                val event = awaitPointerEvent(PointerEventPass.Initial)
-                val passThrough = hole != null && event.changes.any { hole.contains(it.position) }
-                if (!passThrough) event.changes.forEach { it.consume() }
-            }
+        awaitEachGesture {
+            // requireUnconsumed = true: if a control already handled this tap, skip it.
+            val down = awaitFirstDown(requireUnconsumed = true)
+            if (hole != null && hole.contains(down.position)) return@awaitEachGesture
+            down.consume()
+            do {
+                val event = awaitPointerEvent()
+                event.changes.forEach { it.consume() }
+            } while (event.changes.any { it.pressed })
         }
     }
