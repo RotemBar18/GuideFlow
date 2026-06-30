@@ -21,6 +21,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.guideflow.ui.theme.GuideFlowTheme
@@ -43,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
         // Offline fallback: the hardcoded tour is used if remote config is empty
         // or the backend is unreachable.
-        GuideFlow.loadLocalFlows(listOf(demoTour))
+        GuideFlow.loadLocalFlows(listOf(demoTour, tapDemo))
         GuideFlow.setListener(object : GuideFlowListener {
             override fun onFlowStarted(flowKey: String) { Log.d(TAG, "started $flowKey") }
             override fun onStepChanged(flowKey: String, stepIndex: Int) { Log.d(TAG, "step $stepIndex") }
@@ -100,7 +104,7 @@ private fun DemoScreen() {
                 title = { Text("Finance Demo") },
                 actions = {
                     TextButton(
-                        onClick = {},
+                        onClick= {},
                         modifier = Modifier.guideFlowAnchor("profile_button"),
                     ) { Text("Profile") }
                     TextButton(
@@ -111,6 +115,7 @@ private fun DemoScreen() {
             )
         },
     ) { innerPadding ->
+        var budgets by remember { mutableIntStateOf(0) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -127,10 +132,12 @@ private fun DemoScreen() {
                 }
             }
 
+            // The button's own action runs on tap; an advance-on-tap step rides the same tap.
             Button(
-                onClick = {},
+                onClick = { budgets++ },
                 modifier = Modifier.guideFlowAnchor("add_budget_button"),
             ) { Text("Add Budget") }
+            Text("Budgets added: $budgets", style = MaterialTheme.typography.bodyMedium)
 
             Spacer(Modifier.weight(1f))
 
@@ -138,6 +145,10 @@ private fun DemoScreen() {
                 onClick = { GuideFlow.startFlow("demo_tour") },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Start Tutorial") }
+            Button(
+                onClick = { GuideFlow.startFlow("tap_demo") },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Test Tap-to-Advance") }
         }
     }
 }
@@ -192,6 +203,37 @@ private val demoTour = TutorialFlow(
             anchorKey = null,
             title = "You're all set!",
             body = "That's the end of the tour. Tap Done to finish.",
+        ),
+    ),
+)
+
+/**
+ * Local-only flow (not in remote config) to test advance-on-tap: tapping the
+ * highlighted "Add Budget" button both runs its own action (increments the
+ * counter) and advances the flow — no Next button on that step.
+ */
+private val tapDemo = TutorialFlow(
+    id = "flow_tap",
+    flowKey = "tap_demo",
+    name = "Tap Demo",
+    status = FlowStatus.PUBLISHED,
+    steps = listOf(
+        TutorialStep(
+            id = "t1",
+            order = 1,
+            type = StepType.TOOLTIP,
+            anchorKey = "add_budget_button",
+            title = "Tap to add a budget",
+            body = "Tap the button itself — it adds a budget and moves the tour forward.",
+            advanceOnTap = true,
+        ),
+        TutorialStep(
+            id = "t2",
+            order = 2,
+            type = StepType.MODAL,
+            anchorKey = null,
+            title = "Nice!",
+            body = "Your tap ran the button's action and advanced the tutorial. Tap Done to finish.",
         ),
     ),
 )
