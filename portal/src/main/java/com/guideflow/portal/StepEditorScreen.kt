@@ -30,7 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -173,10 +176,20 @@ fun StepEditorScreen(
             Spacer(Modifier.height(18.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 SectionLabel("Live preview", Modifier.weight(1f))
-                Text("how it appears in-app", color = Gf.textFaint, fontSize = 10.sp)
+                Text("with this flow's light theme", color = Gf.textFaint, fontSize = 10.sp)
             }
             Spacer(Modifier.height(7.dp))
-            LivePreview(type, title.ifBlank { "Title" }, body)
+            LivePreview(
+                type = type,
+                title = title.ifBlank { "Title" },
+                body = body,
+                accent = parseHex(flow.theme.accentColor ?: "#4F5BD5"),
+                buttonText = parseHexOrNull(flow.theme.buttonTextColor) ?: Color.White,
+                corner = flow.theme.cornerRadius,
+                dim = flow.theme.dimOpacity,
+                buttonLabel = flow.theme.nextLabel,
+                rtl = flow.theme.rtl,
+            )
 
             serverError?.let {
                 Spacer(Modifier.height(14.dp))
@@ -218,34 +231,45 @@ private fun TypeSegmented(selected: StepType, onSelect: (StepType) -> Unit) {
     }
 }
 
+private fun parseHex(hex: String): Color =
+    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Gf.primary)
+
+private fun parseHexOrNull(hex: String?): Color? =
+    hex?.ifBlank { null }?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
+
 @Composable
-private fun LivePreview(type: StepType, title: String, body: String) {
+private fun LivePreview(
+    type: StepType, title: String, body: String,
+    accent: Color, buttonText: Color, corner: Int, dim: Float, buttonLabel: String, rtl: Boolean,
+) {
     Box(Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)), contentAlignment = Alignment.Center) {
-        when (type) {
-            StepType.MODAL -> Box(Modifier.fillMaxSize().background(Color(0x80111418)), contentAlignment = Alignment.Center) {
-                PreviewCard(title, body, centered = true)
-            }
-            StepType.SPOTLIGHT -> Box(Modifier.fillMaxSize().background(Gf.ink), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(width = 120.dp, height = 48.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F3)).border(6.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp)))
-                    Spacer(Modifier.height(12.dp))
-                    Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    if (body.isNotBlank()) Text(body, color = Gf.textFaint, fontSize = 10.sp, maxLines = 2, textAlign = TextAlign.Center)
+        CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            when (type) {
+                StepType.MODAL -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)), contentAlignment = Alignment.Center) {
+                    PreviewCard(title, body, true, accent, buttonText, corner, buttonLabel)
                 }
-            }
-            StepType.TOOLTIP -> Box(Modifier.fillMaxSize()) {
-                Box(Modifier.align(Alignment.BottomStart).padding(start = 40.dp, bottom = 24.dp).size(width = 84.dp, height = 30.dp)
-                    .clip(RoundedCornerShape(8.dp)).background(Color(0xFFCFD3DC)).border(2.dp, Gf.tooltip, RoundedCornerShape(8.dp)))
-                Box(Modifier.align(Alignment.Center).padding(8.dp)) { PreviewCard(title, body, centered = false) }
+                StepType.SPOTLIGHT -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(Modifier.size(width = 120.dp, height = 48.dp).clip(RoundedCornerShape(corner.dp)).background(Color(0xFFEEF0F3)).border(6.dp, Color(0x33FFFFFF), RoundedCornerShape(corner.dp)))
+                        Spacer(Modifier.height(12.dp))
+                        Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        if (body.isNotBlank()) Text(body, color = Gf.textFaint, fontSize = 10.sp, maxLines = 2, textAlign = TextAlign.Center)
+                    }
+                }
+                StepType.TOOLTIP -> Box(Modifier.fillMaxSize()) {
+                    Box(Modifier.align(Alignment.BottomStart).padding(start = 40.dp, bottom = 24.dp).size(width = 84.dp, height = 30.dp)
+                        .clip(RoundedCornerShape(8.dp)).background(Color(0xFFCFD3DC)).border(2.dp, accent, RoundedCornerShape(8.dp)))
+                    Box(Modifier.align(Alignment.Center).padding(8.dp)) { PreviewCard(title, body, false, accent, buttonText, corner, buttonLabel) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PreviewCard(title: String, body: String, centered: Boolean) {
+private fun PreviewCard(title: String, body: String, centered: Boolean, accent: Color, buttonText: Color, corner: Int, buttonLabel: String) {
     Column(
-        Modifier.fillMaxWidth(0.74f).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(13.dp),
+        Modifier.fillMaxWidth(0.74f).clip(RoundedCornerShape(corner.dp)).background(Color.White).padding(13.dp),
         horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
     ) {
         Text(title, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
@@ -254,8 +278,8 @@ private fun PreviewCard(title: String, body: String, centered: Boolean) {
             Text(body, color = Gf.textMuted, fontSize = 10.5.sp, lineHeight = 14.sp, maxLines = 3, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
         }
         Spacer(Modifier.height(10.dp))
-        Box(Modifier.fillMaxWidth(if (centered) 1f else 0.5f).clip(RoundedCornerShape(8.dp)).background(Gf.primary).padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
-            Text(if (centered) "Got it" else "Next", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Box(Modifier.fillMaxWidth(if (centered) 1f else 0.5f).clip(RoundedCornerShape(8.dp)).background(accent).padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
+            Text(buttonLabel, color = buttonText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
