@@ -31,7 +31,7 @@ import com.guideflow.sdk.flow.ActiveFlowState
 internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier) {
     val coordinator = GuideFlow.coordinator
     val step = state.currentStep
-    val theme = state.flow.theme
+    val theme = state.activeTheme()
     val textColor = theme.textColorOrNull() ?: Color.Unspecified
     Column(modifier) {
         Text(step.title, style = MaterialTheme.typography.titleMedium, color = textColor)

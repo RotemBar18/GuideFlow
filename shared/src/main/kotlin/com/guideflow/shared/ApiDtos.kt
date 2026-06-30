@@ -45,6 +45,7 @@ data class UpdateFlowRequest(
     val flowKey: String? = null,
     val name: String? = null,
     val theme: FlowTheme? = null,
+    val themeDark: FlowTheme? = null,
 )
 
 @Serializable

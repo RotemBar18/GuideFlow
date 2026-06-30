@@ -22,7 +22,7 @@ import com.guideflow.sdk.flow.ActiveFlowState
  */
 @Composable
 internal fun ModalFallback(state: ActiveFlowState) {
-    val theme = state.flow.theme
+    val theme = state.activeTheme()
     val bg = theme.backgroundColorOrNull()
     Box(
         modifier = Modifier

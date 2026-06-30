@@ -27,7 +27,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,8 +50,8 @@ private val SWATCHES = listOf("#4F5BD5", "#0F9D58", "#D64545", "#B45309", "#7C3A
 private fun parseColor(hex: String): Color =
     runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Gf.primary)
 
-private fun parseColorOrNull(hex: String): Color? =
-    hex.ifBlank { null }?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
+private fun parseColorOrNull(hex: String?): Color? =
+    hex?.ifBlank { null }?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
 
 @Composable
 fun AppearanceScreen(
@@ -63,23 +61,18 @@ fun AppearanceScreen(
     onBack: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val t = flow.theme
-    var accent by remember { mutableStateOf(t.accentColor ?: "#4F5BD5") }
-    var bg by remember { mutableStateOf(t.backgroundColor ?: "") }
-    var textC by remember { mutableStateOf(t.textColor ?: "") }
-    var dim by remember { mutableFloatStateOf(t.dimOpacity) }
-    var corner by remember { mutableFloatStateOf(t.cornerRadius.toFloat()) }
-    var nextL by remember { mutableStateOf(t.nextLabel) }
-    var skipL by remember { mutableStateOf(t.skipLabel) }
-    var doneL by remember { mutableStateOf(t.doneLabel) }
-    var showProgress by remember { mutableStateOf(t.showProgress) }
-    var showSkip by remember { mutableStateOf(t.showSkip) }
+    var light by remember { mutableStateOf(flow.theme) }
+    var dark by remember { mutableStateOf(flow.themeDark) }
+    var editingDark by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    val accentColor = parseColor(accent)
-    val cardColor = parseColorOrNull(bg) ?: Color.White
-    val txtColor = parseColorOrNull(textC) ?: Gf.ink
+    val cur = if (editingDark) dark else light
+    fun set(t: FlowTheme) { if (editingDark) dark = t else light = t }
+
+    val accentColor = parseColor(cur.accentColor ?: "#4F5BD5")
+    val cardColor = parseColorOrNull(cur.backgroundColor) ?: if (editingDark) Color(0xFF1B1F27) else Color.White
+    val txtColor = parseColorOrNull(cur.textColor) ?: if (editingDark) Color.White else Gf.ink
 
     Scaffold(
         containerColor = Gf.surface,
@@ -90,20 +83,8 @@ fun AppearanceScreen(
                 Button(
                     onClick = {
                         saving = true; error = null
-                        val theme = FlowTheme(
-                            accentColor = accent.trim().ifBlank { null },
-                            backgroundColor = bg.trim().ifBlank { null },
-                            textColor = textC.trim().ifBlank { null },
-                            dimOpacity = dim,
-                            cornerRadius = corner.roundToInt(),
-                            nextLabel = nextL.ifBlank { "Next" },
-                            skipLabel = skipL.ifBlank { "Skip" },
-                            doneLabel = doneL.ifBlank { "Done" },
-                            showProgress = showProgress,
-                            showSkip = showSkip,
-                        )
                         scope.launch {
-                            runCatching { api.updateFlowTheme(flow.id, theme, getToken()) }
+                            runCatching { api.updateFlowThemes(flow.id, light, dark, getToken()) }
                                 .onSuccess { onBack() }
                                 .onFailure { error = it.message ?: "Failed to save"; saving = false }
                         }
@@ -111,7 +92,7 @@ fun AppearanceScreen(
                     enabled = !saving,
                     modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
-                ) { Text("Save appearance", fontWeight = FontWeight.SemiBold) }
+                ) { Text("Save light + dark", fontWeight = FontWeight.SemiBold) }
                 Text(
                     "Saving moves the flow to Draft — republish to push the new look.",
                     color = Gf.textFaint, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp),
@@ -123,44 +104,62 @@ fun AppearanceScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            ThemedPreview(accentColor, cardColor, txtColor, dim, corner.roundToInt(), doneL, skipL, showProgress, showSkip)
+            // Light / Dark variant switcher
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F3)).padding(3.dp)) {
+                listOf(false to "Light", true to "Dark").forEach { (isDark, label) ->
+                    val sel = editingDark == isDark
+                    Box(
+                        Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
+                            .background(if (sel) Gf.primary else Color.Transparent)
+                            .clickable { editingDark = isDark }.padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp) }
+                }
+            }
+            Text(
+                "Editing the ${if (editingDark) "DARK" else "LIGHT"} design. The SDK shows it automatically based on the device theme. Leave colors blank to follow the device.",
+                color = Gf.textMuted, fontSize = 11.5.sp,
+            )
+
+            ThemedPreview(accentColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.doneLabel, cur.skipLabel, cur.showProgress, cur.showSkip)
 
             SectionLabel("Accent color")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SWATCHES.forEach { hex ->
                     Box(
                         Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(parseColor(hex))
-                            .border(if (hex.equals(accent, true)) 3.dp else 0.dp, Gf.ink, RoundedCornerShape(8.dp))
-                            .clickable { accent = hex },
+                            .border(if (hex.equals(cur.accentColor, true)) 3.dp else 0.dp, Gf.ink, RoundedCornerShape(8.dp))
+                            .clickable { set(cur.copy(accentColor = hex)) },
                     )
                 }
             }
             OutlinedTextField(
-                value = accent, onValueChange = { accent = it }, singleLine = true,
-                label = { Text("Hex") }, modifier = Modifier.fillMaxWidth(),
+                value = cur.accentColor ?: "", onValueChange = { set(cur.copy(accentColor = it.ifBlank { null })) },
+                singleLine = true, label = { Text("Accent hex") }, modifier = Modifier.fillMaxWidth(),
             )
 
-            SectionLabel("Dim opacity  ${(dim * 100).roundToInt()}%")
-            Slider(value = dim, onValueChange = { dim = it }, valueRange = 0.2f..0.9f)
+            SectionLabel("Dim opacity  ${(cur.dimOpacity * 100).roundToInt()}%")
+            Slider(value = cur.dimOpacity, onValueChange = { set(cur.copy(dimOpacity = it)) }, valueRange = 0.2f..0.9f)
 
-            SectionLabel("Corner radius  ${corner.roundToInt()}dp")
-            Slider(value = corner, onValueChange = { corner = it }, valueRange = 0f..28f)
+            SectionLabel("Corner radius  ${cur.cornerRadius}dp")
+            Slider(value = cur.cornerRadius.toFloat(), onValueChange = { set(cur.copy(cornerRadius = it.roundToInt())) }, valueRange = 0f..28f)
 
-            SectionLabel("Card & text — blank follows the app's light/dark theme")
+            SectionLabel("Card & text — blank follows the device theme")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { bg = "#1B1F27"; textC = "#FFFFFF" }) { Text("Night") }
-                OutlinedButton(onClick = { bg = ""; textC = "" }) { Text("Follow app") }
+                OutlinedButton(onClick = { set(cur.copy(backgroundColor = "#1B1F27", textColor = "#FFFFFF")) }) { Text("Dark colors") }
+                OutlinedButton(onClick = { set(cur.copy(backgroundColor = "#FFFFFF", textColor = "#11141B")) }) { Text("Light colors") }
+                OutlinedButton(onClick = { set(cur.copy(backgroundColor = null, textColor = null)) }) { Text("Auto") }
             }
-            OutlinedTextField(value = bg, onValueChange = { bg = it }, singleLine = true, label = { Text("Card background hex") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = textC, onValueChange = { textC = it }, singleLine = true, label = { Text("Text color hex") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cur.backgroundColor ?: "", onValueChange = { set(cur.copy(backgroundColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Card background hex") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cur.textColor ?: "", onValueChange = { set(cur.copy(textColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Text color hex") }, modifier = Modifier.fillMaxWidth())
 
             SectionLabel("Button labels")
-            OutlinedTextField(value = nextL, onValueChange = { nextL = it }, singleLine = true, label = { Text("Next") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = skipL, onValueChange = { skipL = it }, singleLine = true, label = { Text("Skip") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = doneL, onValueChange = { doneL = it }, singleLine = true, label = { Text("Done (last step)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cur.nextLabel, onValueChange = { set(cur.copy(nextLabel = it)) }, singleLine = true, label = { Text("Next") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cur.skipLabel, onValueChange = { set(cur.copy(skipLabel = it)) }, singleLine = true, label = { Text("Skip") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cur.doneLabel, onValueChange = { set(cur.copy(doneLabel = it)) }, singleLine = true, label = { Text("Done (last step)") }, modifier = Modifier.fillMaxWidth())
 
-            ToggleRow("Show step progress", showProgress) { showProgress = it }
-            ToggleRow("Show skip button", showSkip) { showSkip = it }
+            ToggleRow("Show step progress", cur.showProgress) { set(cur.copy(showProgress = it)) }
+            ToggleRow("Show skip button", cur.showSkip) { set(cur.copy(showSkip = it)) }
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -199,7 +198,7 @@ private fun ThemedPreview(
                 Spacer(Modifier.weight(1f))
                 Box(
                     Modifier.clip(RoundedCornerShape(10.dp)).background(accent).padding(horizontal = 18.dp, vertical = 8.dp),
-                ) { Text(doneLabel, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, fontFamily = FontFamily.Default) }
+                ) { Text(doneLabel, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
             }
         }
     }

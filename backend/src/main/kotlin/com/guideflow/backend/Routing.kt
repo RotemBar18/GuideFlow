@@ -110,7 +110,7 @@ private fun io.ktor.server.routing.Route.flowRoutes(store: GuideFlowStore, auth:
             val flowId = call.pathParam("flowId")
             store.assertFlowOwned(flowId, owner)
             val body = call.receive<UpdateFlowRequest>()
-            val flow = store.updateFlow(flowId, body.flowKey, body.name, body.theme) ?: notFound("flow_not_found", "Unknown flow")
+            val flow = store.updateFlow(flowId, body.flowKey, body.name, body.theme, body.themeDark) ?: notFound("flow_not_found", "Unknown flow")
             call.respond(flow.toTutorialFlow())
         }
         delete {
@@ -212,6 +212,7 @@ private fun FlowRecord.toTutorialFlow() = TutorialFlow(
     status = status,
     steps = steps.sortedBy { it.order },
     theme = theme,
+    themeDark = themeDark,
 )
 
 private fun RoutingCall.pathParam(name: String): String =

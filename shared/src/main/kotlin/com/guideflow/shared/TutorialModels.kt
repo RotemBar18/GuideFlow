@@ -58,7 +58,8 @@ data class TutorialFlow(
     val name: String,
     val status: FlowStatus,
     val steps: List<TutorialStep> = emptyList(),
-    val theme: FlowTheme = FlowTheme(),
+    val theme: FlowTheme = FlowTheme(),        // light-mode design
+    val themeDark: FlowTheme = FlowTheme(),    // dark-mode design; used when the device is in dark mode
 )
 
 /** The single published configuration object downloaded by the SDK. */

@@ -33,7 +33,7 @@ import com.guideflow.sdk.flow.ActiveFlowState
  */
 @Composable
 internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
-    val theme = state.flow.theme
+    val theme = state.activeTheme()
     Box(Modifier.fillMaxSize().consumeTaps().testTag(GuideFlowOverlayTags.SPOTLIGHT)) {
         Canvas(
             modifier = Modifier

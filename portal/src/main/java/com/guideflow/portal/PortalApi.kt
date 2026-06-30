@@ -81,9 +81,9 @@ class PortalApi(
     suspend fun getAnalytics(flowId: String, token: String?): AnalyticsSummary =
         http.get("$baseUrl/api/flows/$flowId/analytics") { authorize(token) }.body()
 
-    suspend fun updateFlowTheme(flowId: String, theme: FlowTheme, token: String?): TutorialFlow =
+    suspend fun updateFlowThemes(flowId: String, light: FlowTheme, dark: FlowTheme, token: String?): TutorialFlow =
         http.put("$baseUrl/api/flows/$flowId") {
-            authorize(token); contentType(ContentType.Application.Json); setBody(UpdateFlowRequest(theme = theme))
+            authorize(token); contentType(ContentType.Application.Json); setBody(UpdateFlowRequest(theme = light, themeDark = dark))
         }.body()
 
     // --- steps ---

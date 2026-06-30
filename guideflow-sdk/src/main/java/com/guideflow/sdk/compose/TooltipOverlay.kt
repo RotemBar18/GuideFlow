@@ -25,12 +25,13 @@ import kotlin.math.roundToInt
  */
 @Composable
 internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
+    val theme = state.activeTheme()
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val maxHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
         val yPx = (anchor.bounds.bottom + 16f)
             .coerceAtMost(maxHeightPx - 240f)
             .coerceAtLeast(0f)
-        val bg = state.flow.theme.backgroundColorOrNull()
+        val bg = theme.backgroundColorOrNull()
         Card(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -38,7 +39,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                 .padding(horizontal = 16.dp)
                 .widthIn(max = 360.dp)
                 .testTag(GuideFlowOverlayTags.TOOLTIP),
-            shape = RoundedCornerShape(state.flow.theme.cornerRadius.dp),
+            shape = RoundedCornerShape(theme.cornerRadius.dp),
             colors = if (bg != null) CardDefaults.cardColors(containerColor = bg) else CardDefaults.cardColors(),
         ) {
             StepControls(state, Modifier.padding(16.dp))

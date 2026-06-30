@@ -97,7 +97,7 @@ class FirestoreStore(
     override fun getFlow(flowId: String): FlowRecord? =
         flows.document(flowId).get().get().takeIf { it.exists() }?.toFlowRecord(loadSteps(flowId))
 
-    override fun updateFlow(flowId: String, flowKey: String?, name: String?, theme: FlowTheme?): FlowRecord? {
+    override fun updateFlow(flowId: String, flowKey: String?, name: String?, theme: FlowTheme?, themeDark: FlowTheme?): FlowRecord? {
         val doc = flows.document(flowId).get().get().takeIf { it.exists() } ?: return null
         val current = doc.toFlowRecord(emptyList())
         if (flowKey != null && flowKey != current.flowKey) {
@@ -112,6 +112,7 @@ class FirestoreStore(
                 "name" to (name ?: current.name),
                 "status" to draftedAgain(current.status).name,
                 "themeJson" to json.encodeToString(theme ?: current.theme),
+                "themeDarkJson" to json.encodeToString(themeDark ?: current.themeDark),
             ),
         ).get()
         return getFlow(flowId)
@@ -311,6 +312,7 @@ class FirestoreStore(
         "name" to name,
         "status" to status.name,
         "themeJson" to json.encodeToString(theme),
+        "themeDarkJson" to json.encodeToString(themeDark),
     )
 
     private fun DocumentSnapshot.toFlowRecord(steps: List<TutorialStep>) = FlowRecord(
@@ -321,6 +323,7 @@ class FirestoreStore(
         status = FlowStatus.valueOf(getString("status") ?: FlowStatus.DRAFT.name),
         steps = steps,
         theme = getString("themeJson")?.let { runCatching { json.decodeFromString<FlowTheme>(it) }.getOrNull() } ?: FlowTheme(),
+        themeDark = getString("themeDarkJson")?.let { runCatching { json.decodeFromString<FlowTheme>(it) }.getOrNull() } ?: FlowTheme(),
     )
 
     private fun TutorialStep.toMap(flowId: String): Map<String, Any?> = mapOf(
