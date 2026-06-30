@@ -47,6 +47,7 @@ import com.guideflow.portal.ui.typeBlurb
 import com.guideflow.portal.ui.typeColors
 import com.guideflow.portal.ui.typeNeedsAnchor
 import com.guideflow.shared.CreateStepRequest
+import com.guideflow.shared.FlowTheme
 import com.guideflow.shared.StepType
 import com.guideflow.shared.TutorialFlow
 import com.guideflow.shared.TutorialStep
@@ -80,6 +81,9 @@ fun StepEditorScreen(
     val theme = if (previewDark) themedFlow.themeDark else themedFlow.theme
     val previewCard = parseHexOrNull(theme.backgroundColor) ?: if (previewDark) Color(0xFF1B1F27) else Color.White
     val previewText = if (previewDark) Color.White else Gf.ink
+    // Real step position so the preview hides Back on step 1 and shows the Done label on the last step.
+    val previewTotal = themedFlow.steps.size.coerceAtLeast(1)
+    val previewIndex = (existing?.let { e -> themedFlow.steps.indexOfFirst { it.id == e.id } } ?: -1).coerceAtLeast(0)
 
     val knownAnchors = remember(flow) {
         flow.steps.mapNotNull { it.anchorKey }.filter { it.isNotBlank() }.distinct()
@@ -137,14 +141,13 @@ fun StepEditorScreen(
                 type = type,
                 title = title.ifBlank { "Title" },
                 body = body,
+                theme = theme,
                 accent = parseHex(theme.accentColor ?: "#4F5BD5"),
                 buttonText = parseHexOrNull(theme.buttonTextColor) ?: Color.White,
                 cardColor = previewCard,
                 textColor = previewText,
-                corner = theme.cornerRadius,
-                dim = theme.dimOpacity,
-                buttonLabel = theme.nextLabel,
-                rtl = theme.rtl,
+                stepIndex = previewIndex,
+                totalSteps = previewTotal,
             )
         }
 
@@ -269,48 +272,64 @@ private fun PreviewModeToggle(dark: Boolean, onChange: (Boolean) -> Unit) {
 
 @Composable
 private fun LivePreview(
-    type: StepType, title: String, body: String,
+    type: StepType, title: String, body: String, theme: FlowTheme,
     accent: Color, buttonText: Color, cardColor: Color, textColor: Color,
-    corner: Int, dim: Float, buttonLabel: String, rtl: Boolean,
+    stepIndex: Int, totalSteps: Int,
 ) {
-    Box(Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)), contentAlignment = Alignment.Center) {
-        CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+    val isFirst = stepIndex <= 0
+    val isLast = stepIndex >= totalSteps - 1
+    val nextLabel = if (isLast) theme.doneLabel else theme.nextLabel
+    val card: @Composable () -> Unit = {
+        PreviewCard(title, body, theme, accent, buttonText, cardColor, textColor, isFirst, nextLabel, stepIndex, totalSteps)
+    }
+    Box(Modifier.fillMaxWidth().height(210.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)), contentAlignment = Alignment.Center) {
+        CompositionLocalProvider(LocalLayoutDirection provides if (theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
             when (type) {
-                StepType.MODAL -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)), contentAlignment = Alignment.Center) {
-                    PreviewCard(title, body, true, accent, buttonText, cardColor, textColor, corner, buttonLabel)
-                }
-                StepType.SPOTLIGHT -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.size(width = 120.dp, height = 48.dp).clip(RoundedCornerShape(corner.dp)).background(Color(0xFFEEF0F3)).border(6.dp, Color(0x33FFFFFF), RoundedCornerShape(corner.dp)))
-                        Spacer(Modifier.height(12.dp))
-                        Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        if (body.isNotBlank()) Text(body, color = Gf.textFaint, fontSize = 10.sp, maxLines = 2, textAlign = TextAlign.Center)
-                    }
+                StepType.MODAL -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = theme.dimOpacity)), contentAlignment = Alignment.Center) { card() }
+                StepType.SPOTLIGHT -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = theme.dimOpacity))) {
+                    // Highlighted cutout near the top; controls card pinned at the bottom (matches the SDK).
+                    Box(Modifier.align(Alignment.TopCenter).padding(top = 14.dp).size(width = 120.dp, height = 44.dp)
+                        .clip(RoundedCornerShape(theme.cornerRadius.dp)).background(Color(0xFFEEF0F3)).border(6.dp, Color(0x33FFFFFF), RoundedCornerShape(theme.cornerRadius.dp)))
+                    Box(Modifier.align(Alignment.BottomCenter).padding(8.dp)) { card() }
                 }
                 StepType.TOOLTIP -> Box(Modifier.fillMaxSize()) {
-                    Box(Modifier.align(Alignment.BottomStart).padding(start = 40.dp, bottom = 24.dp).size(width = 84.dp, height = 30.dp)
+                    // Anchor indicator + the tooltip card just below it.
+                    Box(Modifier.align(Alignment.TopStart).padding(start = 32.dp, top = 14.dp).size(width = 84.dp, height = 28.dp)
                         .clip(RoundedCornerShape(8.dp)).background(Color(0xFFCFD3DC)).border(2.dp, accent, RoundedCornerShape(8.dp)))
-                    Box(Modifier.align(Alignment.Center).padding(8.dp)) { PreviewCard(title, body, false, accent, buttonText, cardColor, textColor, corner, buttonLabel) }
+                    Box(Modifier.align(Alignment.Center).padding(8.dp)) { card() }
                 }
             }
         }
     }
 }
 
+/** Mirrors the SDK's StepControls so the preview matches the published overlay exactly. */
 @Composable
-private fun PreviewCard(title: String, body: String, centered: Boolean, accent: Color, buttonText: Color, cardColor: Color, textColor: Color, corner: Int, buttonLabel: String) {
-    Column(
-        Modifier.fillMaxWidth(0.74f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(13.dp),
-        horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
-    ) {
-        Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
+private fun PreviewCard(
+    title: String, body: String, theme: FlowTheme,
+    accent: Color, buttonText: Color, cardColor: Color, textColor: Color,
+    isFirst: Boolean, nextLabel: String, stepIndex: Int, totalSteps: Int,
+) {
+    Column(Modifier.fillMaxWidth(0.82f).clip(RoundedCornerShape(theme.cornerRadius.dp)).background(cardColor).padding(13.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            if (theme.showSkip) Text(theme.skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 11.sp)
+        }
         if (body.isNotBlank()) {
             Spacer(Modifier.height(5.dp))
-            Text(body, color = textColor.copy(alpha = 0.7f), fontSize = 10.5.sp, lineHeight = 14.sp, maxLines = 3, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
+            Text(body, color = textColor.copy(alpha = 0.7f), fontSize = 10.5.sp, lineHeight = 14.sp, maxLines = 3)
+        }
+        if (theme.showProgress) {
+            Spacer(Modifier.height(8.dp))
+            Text("Step ${stepIndex + 1} of $totalSteps", color = textColor.copy(alpha = 0.55f), fontSize = 10.sp)
         }
         Spacer(Modifier.height(10.dp))
-        Box(Modifier.fillMaxWidth(if (centered) 1f else 0.5f).clip(RoundedCornerShape(8.dp)).background(accent).padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
-            Text(buttonLabel, color = buttonText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (!isFirst) Text(theme.backLabel, color = textColor.copy(alpha = 0.7f), fontSize = 11.sp)
+            Spacer(Modifier.weight(1f))
+            Box(Modifier.clip(RoundedCornerShape(8.dp)).background(accent).padding(horizontal = 16.dp, vertical = 6.dp)) {
+                Text(nextLabel, color = buttonText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
