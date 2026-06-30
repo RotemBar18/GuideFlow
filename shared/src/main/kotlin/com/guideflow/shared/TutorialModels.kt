@@ -46,6 +46,7 @@ data class FlowTheme(
     val dimOpacity: Float = 0.6f,          // 0..1, spotlight/modal scrim darkness
     val cornerRadius: Int = 14,            // dp for cards/bubbles
     val nextLabel: String = "Next",
+    val backLabel: String = "Back",
     val skipLabel: String = "Skip",
     val doneLabel: String = "Done",
     val showProgress: Boolean = true,

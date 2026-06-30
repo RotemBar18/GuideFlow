@@ -58,7 +58,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
                 TextButton(
                     onClick = { coordinator.back() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.BACK),
-                ) { Text("Back") }
+                ) { Text(theme.backLabel) }
                 Spacer(Modifier.width(8.dp))
             }
             Button(

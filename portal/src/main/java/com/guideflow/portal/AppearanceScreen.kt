@@ -144,6 +144,11 @@ fun AppearanceScreen(
                 OutlinedTextField(cur.nextLabel, { set(cur.copy(nextLabel = it)) }, singleLine = true, label = { Text("Next label") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(cur.doneLabel, { set(cur.copy(doneLabel = it)) }, singleLine = true, label = { Text("Done label (last step)") }, modifier = Modifier.fillMaxWidth())
 
+                // ---- The Back button ----
+                SectionLabel("Button — Back")
+                Text("Shown on every step except the first.", color = Gf.textMuted, fontSize = 11.5.sp)
+                OutlinedTextField(cur.backLabel, { set(cur.copy(backLabel = it)) }, singleLine = true, label = { Text("Back label") }, modifier = Modifier.fillMaxWidth())
+
                 // ---- The Skip button ----
                 SectionLabel("Button — Skip")
                 ToggleRow("Show skip button", cur.showSkip) { set(cur.copy(showSkip = it)) }
