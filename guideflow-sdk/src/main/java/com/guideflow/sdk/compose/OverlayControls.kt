@@ -1,6 +1,5 @@
 package com.guideflow.sdk.compose
 
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -31,7 +32,7 @@ import com.guideflow.shared.progressText
  * every overlay type. Buttons drive the [GuideFlow.coordinator] directly.
  */
 @Composable
-internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier) {
+internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier, advanceByTap: Boolean = false) {
     val coordinator = GuideFlow.coordinator
     val step = state.currentStep
     val theme = state.activeTheme()
@@ -69,21 +70,37 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
                 ) { Text(theme.backLabel) }
             }
             Spacer(Modifier.weight(1f))
-            Button(
-                onClick = { coordinator.next() },
-                modifier = Modifier.testTag(GuideFlowOverlayTags.NEXT),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = theme.accentColorOrDefault(),
-                    contentColor = theme.buttonTextColorOrDefault(),
-                ),
-            ) {
-                Text(if (state.isLastStep) theme.doneLabel else theme.nextLabel)
+            if (advanceByTap) {
+                // No Next button: the user advances by tapping the highlighted element.
+                Text("👆", style = MaterialTheme.typography.titleMedium)
+            } else {
+                Button(
+                    onClick = { coordinator.next() },
+                    modifier = Modifier.testTag(GuideFlowOverlayTags.NEXT),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = theme.accentColorOrDefault(),
+                        contentColor = theme.buttonTextColorOrDefault(),
+                    ),
+                ) {
+                    Text(if (state.isLastStep) theme.doneLabel else theme.nextLabel)
+                }
             }
         }
     }
     }
 }
 
-/** Swallow taps that fall outside interactive controls so the host UI can't be touched. */
-internal fun Modifier.consumeTaps(): Modifier =
-    pointerInput(Unit) { detectTapGestures { } }
+/**
+ * Swallow taps so the host UI can't be touched during a step. When [hole] is set
+ * (advance-on-tap steps), taps inside that rect pass through to the host element.
+ */
+internal fun Modifier.consumeTaps(hole: Rect? = null): Modifier =
+    pointerInput(hole) {
+        awaitPointerEventScope {
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val passThrough = hole != null && event.changes.any { hole.contains(it.position) }
+                if (!passThrough) event.changes.forEach { it.consume() }
+            }
+        }
+    }

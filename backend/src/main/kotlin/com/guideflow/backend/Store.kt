@@ -186,6 +186,7 @@ class InMemoryStore : GuideFlowStore {
             anchorKey = req.anchorKey,
             title = req.title,
             body = req.body,
+            advanceOnTap = req.advanceOnTap,
         )
         flows[flowId] = flow.copy(steps = flow.steps + step, status = draftedAgain(flow.status))
         step
@@ -200,6 +201,7 @@ class InMemoryStore : GuideFlowStore {
             title = req.title ?: existing.title,
             body = req.body ?: existing.body,
             order = req.order ?: existing.order,
+            advanceOnTap = req.advanceOnTap ?: existing.advanceOnTap,
         )
         flows[flow.flowId] = flow.copy(
             steps = flow.steps.map { if (it.id == stepId) updated else it },

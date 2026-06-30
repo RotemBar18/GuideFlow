@@ -55,6 +55,7 @@ data class CreateStepRequest(
     val title: String,
     val body: String,
     val order: Int? = null,
+    val advanceOnTap: Boolean = false,
 )
 
 @Serializable
@@ -64,6 +65,7 @@ data class UpdateStepRequest(
     val title: String? = null,
     val body: String? = null,
     val order: Int? = null,
+    val advanceOnTap: Boolean? = null,
 )
 
 @Serializable

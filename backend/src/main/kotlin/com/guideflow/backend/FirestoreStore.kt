@@ -138,6 +138,7 @@ class FirestoreStore(
             anchorKey = req.anchorKey,
             title = req.title,
             body = req.body,
+            advanceOnTap = req.advanceOnTap,
         )
         steps.document(step.id).set(step.toMap(flowId)).get()
         backToDraft(flowId)
@@ -154,6 +155,7 @@ class FirestoreStore(
             title = req.title ?: existing.title,
             body = req.body ?: existing.body,
             order = req.order ?: existing.order,
+            advanceOnTap = req.advanceOnTap ?: existing.advanceOnTap,
         )
         steps.document(stepId).set(updated.toMap(flowId)).get()
         backToDraft(flowId)
@@ -334,6 +336,7 @@ class FirestoreStore(
         "anchorKey" to anchorKey,
         "title" to title,
         "body" to body,
+        "advanceOnTap" to advanceOnTap,
     )
 
     private fun DocumentSnapshot.toStep() = TutorialStep(
@@ -343,5 +346,6 @@ class FirestoreStore(
         anchorKey = getString("anchorKey"),
         title = getString("title").orEmpty(),
         body = getString("body").orEmpty(),
+        advanceOnTap = getBoolean("advanceOnTap") ?: false,
     )
 }

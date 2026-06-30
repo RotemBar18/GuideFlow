@@ -34,7 +34,8 @@ import com.guideflow.sdk.flow.ActiveFlowState
 @Composable
 internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
     val theme = state.activeTheme()
-    Box(Modifier.fillMaxSize().consumeTaps().testTag(GuideFlowOverlayTags.SPOTLIGHT)) {
+    val hole = if (state.currentStep.advanceOnTap) anchor.bounds else null
+    Box(Modifier.fillMaxSize().consumeTaps(hole).testTag(GuideFlowOverlayTags.SPOTLIGHT)) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -63,7 +64,7 @@ internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
             shape = RoundedCornerShape(theme.cornerRadius.dp),
             colors = if (bg != null) CardDefaults.cardColors(containerColor = bg) else CardDefaults.cardColors(),
         ) {
-            StepControls(state, Modifier.padding(16.dp))
+            StepControls(state, Modifier.padding(16.dp), advanceByTap = state.currentStep.advanceOnTap)
         }
     }
 }

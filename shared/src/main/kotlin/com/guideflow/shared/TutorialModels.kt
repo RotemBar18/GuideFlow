@@ -31,6 +31,7 @@ data class TutorialStep(
     val anchorKey: String? = null,
     val title: String,
     val body: String,
+    val advanceOnTap: Boolean = false, // tapping the anchor advances the flow; no Next button
 )
 
 /**

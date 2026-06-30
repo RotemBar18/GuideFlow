@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -70,6 +72,7 @@ fun StepEditorScreen(
     var anchorKey by remember { mutableStateOf(existing?.anchorKey ?: "") }
     var title by remember { mutableStateOf(existing?.title ?: "") }
     var body by remember { mutableStateOf(existing?.body ?: "") }
+    var advanceOnTap by remember { mutableStateOf(existing?.advanceOnTap ?: false) }
     var tried by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var serverError by remember { mutableStateOf<String?>(null) }
@@ -105,11 +108,11 @@ fun StepEditorScreen(
             val token = getToken()
             val result = if (existing == null) {
                 runCatching {
-                    api.addStep(flow.id, CreateStepRequest(type, anchorKey.trim().ifBlank { null }, title.trim(), body.trim()), token)
+                    api.addStep(flow.id, CreateStepRequest(type, anchorKey.trim().ifBlank { null }, title.trim(), body.trim(), advanceOnTap = needsAnchor && advanceOnTap), token)
                 }
             } else {
                 runCatching {
-                    api.updateStep(existing.id, UpdateStepRequest(type, anchorKey.trim().ifBlank { null }, title.trim(), body.trim()), token)
+                    api.updateStep(existing.id, UpdateStepRequest(type, anchorKey.trim().ifBlank { null }, title.trim(), body.trim(), advanceOnTap = needsAnchor && advanceOnTap), token)
                 }
             }
             result.onSuccess { onClose() }.onFailure { serverError = it.message ?: "Failed to save step" }
@@ -151,6 +154,7 @@ fun StepEditorScreen(
                 textColor = previewText,
                 stepIndex = previewIndex,
                 totalSteps = previewTotal,
+                advanceByTap = needsAnchor && advanceOnTap,
             )
         }
 
@@ -213,6 +217,20 @@ fun StepEditorScreen(
             Spacer(Modifier.height(6.dp))
             OutlinedTextField(value = body, onValueChange = { body = it }, modifier = Modifier.fillMaxWidth())
             Text("${body.length} / 120", color = Gf.textFaint, fontSize = 11.sp, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), textAlign = TextAlign.End)
+
+            if (needsAnchor) {
+                Spacer(Modifier.height(16.dp))
+                SectionLabel("Behavior")
+                Spacer(Modifier.height(6.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Advance when the user taps the element", color = Gf.textPrimary, fontSize = 14.sp)
+                        Text("Hides the Next button. The tap also runs the element's own action (e.g. navigation).", color = Gf.textMuted, fontSize = 11.5.sp, lineHeight = 16.sp)
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Switch(checked = advanceOnTap, onCheckedChange = { advanceOnTap = it })
+                }
+            }
 
             serverError?.let {
                 Spacer(Modifier.height(14.dp))
@@ -277,13 +295,13 @@ private fun PreviewModeToggle(dark: Boolean, onChange: (Boolean) -> Unit) {
 private fun LivePreview(
     type: StepType, title: String, body: String, theme: FlowTheme,
     accent: Color, buttonText: Color, cardColor: Color, textColor: Color,
-    stepIndex: Int, totalSteps: Int,
+    stepIndex: Int, totalSteps: Int, advanceByTap: Boolean,
 ) {
     val isFirst = stepIndex <= 0
     val isLast = stepIndex >= totalSteps - 1
     val nextLabel = if (isLast) theme.doneLabel else theme.nextLabel
     val card: @Composable () -> Unit = {
-        PreviewCard(title, body, theme, accent, buttonText, cardColor, textColor, isFirst, nextLabel, stepIndex, totalSteps)
+        PreviewCard(title, body, theme, accent, buttonText, cardColor, textColor, isFirst, nextLabel, stepIndex, totalSteps, advanceByTap)
     }
     Box(Modifier.fillMaxWidth().height(210.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)), contentAlignment = Alignment.Center) {
         CompositionLocalProvider(LocalLayoutDirection provides if (theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
@@ -311,7 +329,7 @@ private fun LivePreview(
 private fun PreviewCard(
     title: String, body: String, theme: FlowTheme,
     accent: Color, buttonText: Color, cardColor: Color, textColor: Color,
-    isFirst: Boolean, nextLabel: String, stepIndex: Int, totalSteps: Int,
+    isFirst: Boolean, nextLabel: String, stepIndex: Int, totalSteps: Int, advanceByTap: Boolean,
 ) {
     Column(Modifier.fillMaxWidth(0.82f).clip(RoundedCornerShape(theme.cornerRadius.dp)).background(cardColor).padding(13.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -330,8 +348,12 @@ private fun PreviewCard(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             if (!isFirst) Text(theme.backLabel, color = textColor.copy(alpha = 0.7f), fontSize = 11.sp)
             Spacer(Modifier.weight(1f))
-            Box(Modifier.clip(RoundedCornerShape(8.dp)).background(accent).padding(horizontal = 16.dp, vertical = 6.dp)) {
-                Text(nextLabel, color = buttonText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            if (advanceByTap) {
+                Text("👆", fontSize = 15.sp)
+            } else {
+                Box(Modifier.clip(RoundedCornerShape(8.dp)).background(accent).padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    Text(nextLabel, color = buttonText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
     }

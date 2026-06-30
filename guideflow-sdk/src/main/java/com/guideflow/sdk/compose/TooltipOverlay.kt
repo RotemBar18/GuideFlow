@@ -37,6 +37,9 @@ import kotlin.math.roundToInt
 internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
     val theme = state.activeTheme()
     val accent = theme.accentColorOrDefault()
+    // Block the host UI; on advance-on-tap steps leave a hole over the anchor.
+    val hole = if (state.currentStep.advanceOnTap) anchor.bounds else null
+    Box(Modifier.fillMaxSize().consumeTaps(hole))
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val maxWidthPx = with(density) { maxWidth.toPx() }
@@ -74,7 +77,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
             shape = RoundedCornerShape(theme.cornerRadius.dp),
             colors = theme.backgroundColorOrNull()?.let { CardDefaults.cardColors(containerColor = it) } ?: CardDefaults.cardColors(),
         ) {
-            StepControls(state, Modifier.padding(16.dp))
+            StepControls(state, Modifier.padding(16.dp), advanceByTap = state.currentStep.advanceOnTap)
         }
     }
 }
