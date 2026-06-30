@@ -78,7 +78,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (!state.isFirstStep) {
+            if (theme.showBack && !state.isFirstStep) {
                 TextButton(
                     onClick = { coordinator.back() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.BACK),

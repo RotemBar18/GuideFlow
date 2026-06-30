@@ -55,6 +55,7 @@ data class FlowTheme(
     val progressFormat: String = "Step {current} of {total}", // {current}/{total} placeholders
     val showProgress: Boolean = true,
     val showSkip: Boolean = true,
+    val showBack: Boolean = true, // hide Back for flows that change screens (Back can't un-navigate)
 )
 
 /** Renders the step counter from [FlowTheme.progressFormat], substituting the placeholders. */

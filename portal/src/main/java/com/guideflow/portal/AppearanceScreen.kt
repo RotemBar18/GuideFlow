@@ -148,7 +148,8 @@ fun AppearanceScreen(
 
                 // ---- The Back button ----
                 SectionLabel("Back button")
-                Text("Shown on every step except the first.", color = Gf.textMuted, fontSize = 11.5.sp)
+                ToggleRow("Show back button", cur.showBack) { set(cur.copy(showBack = it)) }
+                Text("Turn off for flows that change screens: Back moves the tour back but can't navigate the app back.", color = Gf.textMuted, fontSize = 11.5.sp)
                 OutlinedTextField(cur.backLabel, { set(cur.copy(backLabel = it)) }, singleLine = true, label = { Text("Back label") }, modifier = Modifier.fillMaxWidth())
 
                 // ---- The Skip button ----

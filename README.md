@@ -23,6 +23,7 @@ The backend is deployed on Google Cloud Run and works from any network:
 - Multi-step flows with Next, Back, Skip, and Done. Steps can span multiple screens: a flow keeps running as the host app navigates.
 - An anchor system: tag any composable with `Modifier.guideFlowAnchor("key")` and steps target it by key.
 - Advance-on-tap steps: the highlighted element stays interactive, so tapping it both runs the app's own action (for example navigation) and advances the tour. That step shows no Next button. While a step is active the rest of the screen is blocked, so the user cannot wander off the tour.
+- The Back button can be turned off per flow, which suits flows that change screens (Back moves the tour back but cannot navigate the host app back).
 - Missing-anchor fallback: a tooltip or spotlight whose anchor is not on screen falls back to a modal and emits an anchor-missing callback. The SDK does not crash the host app.
 - Per-flow theming, with separate light and dark designs selected by the device theme: accent colour, button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom Next/Back/Skip/Done labels, a customizable step-counter format, and title/body text size. The font follows the host app's own theme.
 - One-request remote config (`GET /api/client/config`), with `304 Not Modified` based on config version.
