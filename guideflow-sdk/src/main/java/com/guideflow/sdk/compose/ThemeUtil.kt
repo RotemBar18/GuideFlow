@@ -21,3 +21,6 @@ internal fun FlowTheme.accentColorOrDefault(): Color = accentColor?.toColorOrNul
 
 /** Text/content color on the accent button; defaults to white. */
 internal fun FlowTheme.buttonTextColorOrDefault(): Color = buttonTextColor?.toColorOrNull() ?: Color.White
+
+/** Custom card background, or null to follow the host light/dark theme. */
+internal fun FlowTheme.backgroundColorOrNull(): Color? = backgroundColor?.toColorOrNull()

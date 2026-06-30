@@ -76,7 +76,7 @@ fun AppearanceScreen(
 
     val accentColor = parseColor(cur.accentColor ?: "#4F5BD5")
     val buttonTextColor = parseColorOrNull(cur.buttonTextColor) ?: Color.White
-    val cardColor = if (editingDark) Color(0xFF1B1F27) else Color.White
+    val cardColor = parseColorOrNull(cur.backgroundColor) ?: if (editingDark) Color(0xFF1B1F27) else Color.White
     val txtColor = if (editingDark) Color.White else Gf.ink
 
     Scaffold(
@@ -151,6 +151,9 @@ fun AppearanceScreen(
 
                 // ---- The card / overlay ----
                 SectionLabel("Card & overlay")
+                Text("Background (blank = follow device light/dark)", color = Gf.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                SwatchRow(listOf("#FFFFFF", "#1B1F27"), cur.backgroundColor) { set(cur.copy(backgroundColor = it)) }
+                OutlinedTextField(cur.backgroundColor ?: "", { set(cur.copy(backgroundColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Card background hex") }, modifier = Modifier.fillMaxWidth())
                 Text("Corner radius  ${cur.cornerRadius}dp", color = Gf.textSecondary, fontSize = 12.sp)
                 Slider(value = cur.cornerRadius.toFloat(), onValueChange = { set(cur.copy(cornerRadius = it.roundToInt())) }, valueRange = 0f..28f)
                 Text("Dim opacity  ${(cur.dimOpacity * 100).roundToInt()}%", color = Gf.textSecondary, fontSize = 12.sp)

@@ -76,7 +76,10 @@ fun StepEditorScreen(
     LaunchedEffect(flow.id) {
         runCatching { api.getFlow(flow.id, getToken()) }.onSuccess { themedFlow = it }
     }
-    val theme = themedFlow.theme
+    var previewDark by remember { mutableStateOf(false) }
+    val theme = if (previewDark) themedFlow.themeDark else themedFlow.theme
+    val previewCard = parseHexOrNull(theme.backgroundColor) ?: if (previewDark) Color(0xFF1B1F27) else Color.White
+    val previewText = if (previewDark) Color.White else Gf.ink
 
     val knownAnchors = remember(flow) {
         flow.steps.mapNotNull { it.anchorKey }.filter { it.isNotBlank() }.distinct()
@@ -126,12 +129,18 @@ fun StepEditorScreen(
         ) {
             SectionLabel("Type")
             TypeSegmented(type) { type = it }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Preview", color = Gf.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                PreviewModeToggle(previewDark) { previewDark = it }
+            }
             LivePreview(
                 type = type,
                 title = title.ifBlank { "Title" },
                 body = body,
                 accent = parseHex(theme.accentColor ?: "#4F5BD5"),
                 buttonText = parseHexOrNull(theme.buttonTextColor) ?: Color.White,
+                cardColor = previewCard,
+                textColor = previewText,
                 corner = theme.cornerRadius,
                 dim = theme.dimOpacity,
                 buttonLabel = theme.nextLabel,
@@ -246,15 +255,29 @@ private fun parseHexOrNull(hex: String?): Color? =
     hex?.ifBlank { null }?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
 
 @Composable
+private fun PreviewModeToggle(dark: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFEEF0F3)).padding(2.dp)) {
+        listOf(false to "Light", true to "Dark").forEach { (isDark, label) ->
+            val sel = dark == isDark
+            Box(
+                Modifier.clip(RoundedCornerShape(6.dp)).background(if (sel) Gf.primary else Color.Transparent)
+                    .clickable { onChange(isDark) }.padding(horizontal = 12.dp, vertical = 5.dp),
+            ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
+        }
+    }
+}
+
+@Composable
 private fun LivePreview(
     type: StepType, title: String, body: String,
-    accent: Color, buttonText: Color, corner: Int, dim: Float, buttonLabel: String, rtl: Boolean,
+    accent: Color, buttonText: Color, cardColor: Color, textColor: Color,
+    corner: Int, dim: Float, buttonLabel: String, rtl: Boolean,
 ) {
     Box(Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)), contentAlignment = Alignment.Center) {
         CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
             when (type) {
                 StepType.MODAL -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)), contentAlignment = Alignment.Center) {
-                    PreviewCard(title, body, true, accent, buttonText, corner, buttonLabel)
+                    PreviewCard(title, body, true, accent, buttonText, cardColor, textColor, corner, buttonLabel)
                 }
                 StepType.SPOTLIGHT -> Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -267,7 +290,7 @@ private fun LivePreview(
                 StepType.TOOLTIP -> Box(Modifier.fillMaxSize()) {
                     Box(Modifier.align(Alignment.BottomStart).padding(start = 40.dp, bottom = 24.dp).size(width = 84.dp, height = 30.dp)
                         .clip(RoundedCornerShape(8.dp)).background(Color(0xFFCFD3DC)).border(2.dp, accent, RoundedCornerShape(8.dp)))
-                    Box(Modifier.align(Alignment.Center).padding(8.dp)) { PreviewCard(title, body, false, accent, buttonText, corner, buttonLabel) }
+                    Box(Modifier.align(Alignment.Center).padding(8.dp)) { PreviewCard(title, body, false, accent, buttonText, cardColor, textColor, corner, buttonLabel) }
                 }
             }
         }
@@ -275,15 +298,15 @@ private fun LivePreview(
 }
 
 @Composable
-private fun PreviewCard(title: String, body: String, centered: Boolean, accent: Color, buttonText: Color, corner: Int, buttonLabel: String) {
+private fun PreviewCard(title: String, body: String, centered: Boolean, accent: Color, buttonText: Color, cardColor: Color, textColor: Color, corner: Int, buttonLabel: String) {
     Column(
-        Modifier.fillMaxWidth(0.74f).clip(RoundedCornerShape(corner.dp)).background(Color.White).padding(13.dp),
+        Modifier.fillMaxWidth(0.74f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(13.dp),
         horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
     ) {
-        Text(title, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
+        Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
         if (body.isNotBlank()) {
             Spacer(Modifier.height(5.dp))
-            Text(body, color = Gf.textMuted, fontSize = 10.5.sp, lineHeight = 14.sp, maxLines = 3, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
+            Text(body, color = textColor.copy(alpha = 0.7f), fontSize = 10.5.sp, lineHeight = 14.sp, maxLines = 3, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
         }
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth(if (centered) 1f else 0.5f).clip(RoundedCornerShape(8.dp)).background(accent).padding(vertical = 6.dp), contentAlignment = Alignment.Center) {

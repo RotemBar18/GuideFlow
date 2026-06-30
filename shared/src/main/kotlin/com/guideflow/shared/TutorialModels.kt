@@ -41,6 +41,7 @@ data class TutorialStep(
 data class FlowTheme(
     val accentColor: String? = null,       // "#RRGGBB"; null = SDK default accent
     val buttonTextColor: String? = null,   // text on the accent (Next/Done) button; null = white
+    val backgroundColor: String? = null,   // card background; null = follow the device light/dark theme
     val rtl: Boolean = false,              // right-to-left layout for the overlay
     val dimOpacity: Float = 0.6f,          // 0..1, spotlight/modal scrim darkness
     val cornerRadius: Int = 14,            // dp for cards/bubbles
@@ -50,7 +51,7 @@ data class FlowTheme(
     val showProgress: Boolean = true,
     val showSkip: Boolean = true,
 )
-// Card background and step text always follow the device's light/dark theme.
+// Step text follows the device theme; backgroundColor overrides the card surface when set.
 
 @Serializable
 data class TutorialFlow(
