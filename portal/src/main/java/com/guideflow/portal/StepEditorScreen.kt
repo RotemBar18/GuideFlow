@@ -22,6 +22,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +69,14 @@ fun StepEditorScreen(
     var tried by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var serverError by remember { mutableStateOf<String?>(null) }
+
+    // The flow passed via navigation can be stale; fetch the latest so the preview
+    // uses the flow's actual theme.
+    var themedFlow by remember { mutableStateOf(flow) }
+    LaunchedEffect(flow.id) {
+        runCatching { api.getFlow(flow.id, getToken()) }.onSuccess { themedFlow = it }
+    }
+    val theme = themedFlow.theme
 
     val knownAnchors = remember(flow) {
         flow.steps.mapNotNull { it.anchorKey }.filter { it.isNotBlank() }.distinct()
@@ -121,12 +130,12 @@ fun StepEditorScreen(
                 type = type,
                 title = title.ifBlank { "Title" },
                 body = body,
-                accent = parseHex(flow.theme.accentColor ?: "#4F5BD5"),
-                buttonText = parseHexOrNull(flow.theme.buttonTextColor) ?: Color.White,
-                corner = flow.theme.cornerRadius,
-                dim = flow.theme.dimOpacity,
-                buttonLabel = flow.theme.nextLabel,
-                rtl = flow.theme.rtl,
+                accent = parseHex(theme.accentColor ?: "#4F5BD5"),
+                buttonText = parseHexOrNull(theme.buttonTextColor) ?: Color.White,
+                corner = theme.cornerRadius,
+                dim = theme.dimOpacity,
+                buttonLabel = theme.nextLabel,
+                rtl = theme.rtl,
             )
         }
 
