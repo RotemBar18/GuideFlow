@@ -110,11 +110,28 @@ fun StepEditorScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Gf.primary)) { Text("Save", fontWeight = FontWeight.SemiBold) }
         }
 
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
+        // Pinned: type selector + live preview (stays visible while editing the fields).
+        Column(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             SectionLabel("Type")
-            Spacer(Modifier.height(7.dp))
             TypeSegmented(type) { type = it }
-            Spacer(Modifier.height(8.dp))
+            LivePreview(
+                type = type,
+                title = title.ifBlank { "Title" },
+                body = body,
+                accent = parseHex(flow.theme.accentColor ?: "#4F5BD5"),
+                buttonText = parseHexOrNull(flow.theme.buttonTextColor) ?: Color.White,
+                corner = flow.theme.cornerRadius,
+                dim = flow.theme.dimOpacity,
+                buttonLabel = flow.theme.nextLabel,
+                rtl = flow.theme.rtl,
+            )
+        }
+
+        // Scrollable fields.
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
             InfoBanner(typeBlurb(type), fg = typeFg, bg = typeBg, modifier = Modifier.fillMaxWidth())
 
             Spacer(Modifier.height(16.dp))
@@ -172,24 +189,6 @@ fun StepEditorScreen(
             Spacer(Modifier.height(6.dp))
             OutlinedTextField(value = body, onValueChange = { body = it }, modifier = Modifier.fillMaxWidth())
             Text("${body.length} / 120", color = Gf.textFaint, fontSize = 11.sp, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), textAlign = TextAlign.End)
-
-            Spacer(Modifier.height(18.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                SectionLabel("Live preview", Modifier.weight(1f))
-                Text("with this flow's light theme", color = Gf.textFaint, fontSize = 10.sp)
-            }
-            Spacer(Modifier.height(7.dp))
-            LivePreview(
-                type = type,
-                title = title.ifBlank { "Title" },
-                body = body,
-                accent = parseHex(flow.theme.accentColor ?: "#4F5BD5"),
-                buttonText = parseHexOrNull(flow.theme.buttonTextColor) ?: Color.White,
-                corner = flow.theme.cornerRadius,
-                dim = flow.theme.dimOpacity,
-                buttonLabel = flow.theme.nextLabel,
-                rtl = flow.theme.rtl,
-            )
 
             serverError?.let {
                 Spacer(Modifier.height(14.dp))
