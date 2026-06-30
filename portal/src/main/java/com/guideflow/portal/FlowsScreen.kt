@@ -69,6 +69,7 @@ fun FlowsScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showCreate by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<TutorialFlow?>(null) }
+    var renameTarget by remember { mutableStateOf<TutorialFlow?>(null) }
 
     suspend fun reload() {
         loading = true; error = null
@@ -124,6 +125,7 @@ fun FlowsScreen(
                             FlowCard(
                                 flow = flow,
                                 onClick = { onOpenFlow(flow) },
+                                onRename = { renameTarget = flow },
                                 onDuplicate = { scope.launch { duplicate(flow) } },
                                 onDelete = { deleteTarget = flow },
                             )
@@ -145,6 +147,36 @@ fun FlowsScreen(
                         .onFailure { error = it.message ?: "Failed to create flow" }
                 }
             },
+        )
+    }
+
+    renameTarget?.let { target ->
+        var newName by remember(target.id) { mutableStateOf(target.name) }
+        AlertDialog(
+            onDismissRequest = { renameTarget = null },
+            title = { Text("Rename flow", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = newName, onValueChange = { newName = it },
+                    label = { Text("Display name") }, singleLine = true,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val name = newName.trim()
+                        renameTarget = null
+                        scope.launch {
+                            runCatching { api.renameFlow(target.id, name, getToken()) }
+                                .onSuccess { reload() }
+                                .onFailure { error = it.message ?: "Failed to rename flow" }
+                        }
+                    },
+                    enabled = newName.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
+                ) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { renameTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
         )
     }
 
@@ -172,7 +204,7 @@ fun FlowsScreen(
 }
 
 @Composable
-private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit) {
+private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit, onRename: () -> Unit, onDuplicate: () -> Unit, onDelete: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     GfCard(Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(Modifier.padding(15.dp)) {
@@ -185,6 +217,7 @@ private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit, onDuplicate: () ->
                         modifier = Modifier.clickable { menu = true }.padding(start = 12.dp, end = 2.dp),
                     )
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text("Rename") }, onClick = { menu = false; onRename() })
                         DropdownMenuItem(text = { Text("Duplicate") }, onClick = { menu = false; onDuplicate() })
                         DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
                     }

@@ -86,6 +86,11 @@ class PortalApi(
             authorize(token); contentType(ContentType.Application.Json); setBody(UpdateFlowRequest(theme = light, themeDark = dark))
         }.body()
 
+    suspend fun renameFlow(flowId: String, name: String, token: String?): TutorialFlow =
+        http.put("$baseUrl/api/flows/$flowId") {
+            authorize(token); contentType(ContentType.Application.Json); setBody(UpdateFlowRequest(name = name))
+        }.body()
+
     // --- steps ---
     suspend fun addStep(flowId: String, req: CreateStepRequest, token: String?): TutorialStep =
         http.post("$baseUrl/api/flows/$flowId/steps") {
