@@ -70,6 +70,7 @@ fun FlowsScreen(
     var showCreate by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<TutorialFlow?>(null) }
     var renameTarget by remember { mutableStateOf<TutorialFlow?>(null) }
+    var duplicateTarget by remember { mutableStateOf<TutorialFlow?>(null) }
 
     suspend fun reload() {
         loading = true; error = null
@@ -88,10 +89,10 @@ fun FlowsScreen(
         while ("${base}_$i" in keys) i++
         return "${base}_$i"
     }
-    suspend fun duplicate(src: TutorialFlow) {
+    suspend fun duplicate(src: TutorialFlow, newKey: String, newName: String) {
         error = null
         runCatching {
-            val copy = api.createFlow(project.projectId, uniqueKey("${src.flowKey}_copy"), "${src.name} (copy)", getToken())
+            val copy = api.createFlow(project.projectId, newKey, newName, getToken())
             src.steps.sortedBy { it.order }.forEach { s ->
                 api.addStep(copy.id, CreateStepRequest(s.type, s.anchorKey, s.title, s.body, s.order, s.advanceOnTap), getToken())
             }
@@ -126,7 +127,7 @@ fun FlowsScreen(
                                 flow = flow,
                                 onClick = { onOpenFlow(flow) },
                                 onRename = { renameTarget = flow },
-                                onDuplicate = { scope.launch { duplicate(flow) } },
+                                onDuplicate = { duplicateTarget = flow },
                                 onDelete = { deleteTarget = flow },
                             )
                         }
@@ -137,15 +138,31 @@ fun FlowsScreen(
     }
 
     if (showCreate) {
-        CreateFlowDialog(
+        FlowFormDialog(
+            title = "New flow",
+            confirmText = "Create",
             onDismiss = { showCreate = false },
-            onCreate = { key, name ->
+            onConfirm = { key, name ->
                 showCreate = false
                 scope.launch {
                     runCatching { api.createFlow(project.projectId, key, name, getToken()) }
                         .onSuccess { reload() }
                         .onFailure { error = it.message ?: "Failed to create flow" }
                 }
+            },
+        )
+    }
+
+    duplicateTarget?.let { src ->
+        FlowFormDialog(
+            title = "Duplicate flow",
+            confirmText = "Duplicate",
+            initialKey = uniqueKey("${src.flowKey}_copy"),
+            initialName = "${src.name} (copy)",
+            onDismiss = { duplicateTarget = null },
+            onConfirm = { key, name ->
+                duplicateTarget = null
+                scope.launch { duplicate(src, key, name) }
             },
         )
     }
@@ -232,30 +249,37 @@ private fun FlowCard(flow: TutorialFlow, onClick: () -> Unit, onRename: () -> Un
 }
 
 @Composable
-private fun CreateFlowDialog(onDismiss: () -> Unit, onCreate: (String, String) -> Unit) {
-    var key by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
+private fun FlowFormDialog(
+    title: String,
+    confirmText: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+    initialKey: String = "",
+    initialName: String = "",
+) {
+    var key by remember { mutableStateOf(initialKey) }
+    var name by remember { mutableStateOf(initialName) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New flow", fontWeight = FontWeight.Bold) },
+        title = { Text(title, fontWeight = FontWeight.Bold) },
         text = {
             Column {
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it },
+                    label = { Text("Display name *") }, singleLine = true,
+                )
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = key, onValueChange = { key = it.lowercase().replace(' ', '_') },
                     label = { Text("Flow key *") }, singleLine = true,
                     supportingText = { Text("Used in code: startFlow(\"$key\"). Lowercase, no spaces. Can't change later.", fontSize = 11.sp) },
                 )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = name, onValueChange = { name = it },
-                    label = { Text("Display name *") }, singleLine = true,
-                )
             }
         },
         confirmButton = {
-            Button(onClick = { if (key.isNotBlank() && name.isNotBlank()) onCreate(key.trim(), name.trim()) },
+            Button(onClick = { if (key.isNotBlank() && name.isNotBlank()) onConfirm(key.trim(), name.trim()) },
                 enabled = key.isNotBlank() && name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = Gf.primary)) { Text("Create") }
+                colors = ButtonDefaults.buttonColors(containerColor = Gf.primary)) { Text(confirmText) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Gf.textSecondary) } },
     )
