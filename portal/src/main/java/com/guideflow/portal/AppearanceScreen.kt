@@ -71,8 +71,10 @@ fun AppearanceScreen(
     fun set(t: FlowTheme) { if (editingDark) dark = t else light = t }
 
     val accentColor = parseColor(cur.accentColor ?: "#4F5BD5")
-    val cardColor = parseColorOrNull(cur.backgroundColor) ?: if (editingDark) Color(0xFF1B1F27) else Color.White
-    val txtColor = parseColorOrNull(cur.textColor) ?: if (editingDark) Color.White else Gf.ink
+    val buttonTextColor = parseColorOrNull(cur.buttonTextColor) ?: Color.White
+    // Card + text always follow the device theme; the preview mirrors the variant being edited.
+    val cardColor = if (editingDark) Color(0xFF1B1F27) else Color.White
+    val txtColor = if (editingDark) Color.White else Gf.ink
 
     Scaffold(
         containerColor = Gf.surface,
@@ -117,11 +119,11 @@ fun AppearanceScreen(
                 }
             }
             Text(
-                "Editing the ${if (editingDark) "DARK" else "LIGHT"} design. The SDK shows it automatically based on the device theme. Leave colors blank to follow the device.",
+                "Editing the ${if (editingDark) "DARK" else "LIGHT"} design, shown automatically based on the device theme. Card and text follow the device; you set the accent and button-text color.",
                 color = Gf.textMuted, fontSize = 11.5.sp,
             )
 
-            ThemedPreview(accentColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.doneLabel, cur.skipLabel, cur.showProgress, cur.showSkip)
+            ThemedPreview(accentColor, buttonTextColor, cardColor, txtColor, cur.dimOpacity, cur.cornerRadius, cur.doneLabel, cur.skipLabel, cur.showProgress, cur.showSkip)
 
             SectionLabel("Accent color")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -144,14 +146,17 @@ fun AppearanceScreen(
             SectionLabel("Corner radius  ${cur.cornerRadius}dp")
             Slider(value = cur.cornerRadius.toFloat(), onValueChange = { set(cur.copy(cornerRadius = it.roundToInt())) }, valueRange = 0f..28f)
 
-            SectionLabel("Card & text — blank follows the device theme")
+            SectionLabel("Button text color")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { set(cur.copy(backgroundColor = "#1B1F27", textColor = "#FFFFFF")) }) { Text("Dark colors") }
-                OutlinedButton(onClick = { set(cur.copy(backgroundColor = "#FFFFFF", textColor = "#11141B")) }) { Text("Light colors") }
-                OutlinedButton(onClick = { set(cur.copy(backgroundColor = null, textColor = null)) }) { Text("Auto") }
+                listOf("#FFFFFF", "#11141B").forEach { hex ->
+                    Box(
+                        Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(parseColor(hex))
+                            .border(if (hex.equals(cur.buttonTextColor, true)) 3.dp else 1.dp, Gf.borderStrong, RoundedCornerShape(8.dp))
+                            .clickable { set(cur.copy(buttonTextColor = hex)) },
+                    )
+                }
             }
-            OutlinedTextField(value = cur.backgroundColor ?: "", onValueChange = { set(cur.copy(backgroundColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Card background hex") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = cur.textColor ?: "", onValueChange = { set(cur.copy(textColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Text color hex") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cur.buttonTextColor ?: "", onValueChange = { set(cur.copy(buttonTextColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Button text hex (blank = white)") }, modifier = Modifier.fillMaxWidth())
 
             SectionLabel("Button labels")
             OutlinedTextField(value = cur.nextLabel, onValueChange = { set(cur.copy(nextLabel = it)) }, singleLine = true, label = { Text("Next") }, modifier = Modifier.fillMaxWidth())
@@ -175,7 +180,7 @@ private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit
 
 @Composable
 private fun ThemedPreview(
-    accent: Color, cardColor: Color, textColor: Color, dim: Float, corner: Int,
+    accent: Color, buttonTextColor: Color, cardColor: Color, textColor: Color, dim: Float, corner: Int,
     doneLabel: String, skipLabel: String, showProgress: Boolean, showSkip: Boolean,
 ) {
     Box(
@@ -198,7 +203,7 @@ private fun ThemedPreview(
                 Spacer(Modifier.weight(1f))
                 Box(
                     Modifier.clip(RoundedCornerShape(10.dp)).background(accent).padding(horizontal = 18.dp, vertical = 8.dp),
-                ) { Text(doneLabel, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                ) { Text(doneLabel, color = buttonTextColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
             }
         }
     }

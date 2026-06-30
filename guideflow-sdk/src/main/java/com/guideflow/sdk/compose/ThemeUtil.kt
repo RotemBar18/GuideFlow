@@ -19,8 +19,5 @@ private fun String.toColorOrNull(): Color? =
 /** Parse the flow theme's hex accent ("#RRGGBB"), falling back to the SDK default. */
 internal fun FlowTheme.accentColorOrDefault(): Color = accentColor?.toColorOrNull() ?: DEFAULT_ACCENT
 
-/** Explicit card background, or null to follow the host app's light/dark theme. */
-internal fun FlowTheme.backgroundColorOrNull(): Color? = backgroundColor?.toColorOrNull()
-
-/** Explicit text color, or null to follow the host app's theme. */
-internal fun FlowTheme.textColorOrNull(): Color? = textColor?.toColorOrNull()
+/** Text/content color on the accent button; defaults to white. */
+internal fun FlowTheme.buttonTextColorOrDefault(): Color = buttonTextColor?.toColorOrNull() ?: Color.White
