@@ -77,9 +77,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GuideFlowTheme {
-                // GuideFlowHost wraps the app once near the root.
+                // GuideFlowHost wraps the app once near the root, so overlays and
+                // anchors keep working as we navigate between pages.
                 GuideFlowHost {
-                    DemoScreen()
+                    var screen by remember { mutableStateOf(Screen.Home) }
+                    when (screen) {
+                        Screen.Home -> HomeScreen(onOpenDetails = { screen = Screen.Details })
+                        Screen.Details -> DetailsScreen(onBack = { screen = Screen.Home })
+                    }
                 }
             }
         }
@@ -97,16 +102,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+enum class Screen { Home, Details }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DemoScreen() {
+private fun HomeScreen(onOpenDetails: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Finance Demo") },
                 actions = {
                     TextButton(
-                        onClick= {},
+                        onClick = {},
                         modifier = Modifier.guideFlowAnchor("profile_button"),
                     ) { Text("Profile") }
                     TextButton(
@@ -141,6 +148,13 @@ private fun DemoScreen() {
             ) { Text("Add Budget") }
             Text("Budgets added: $budgets", style = MaterialTheme.typography.bodyMedium)
 
+            // Navigates to the second page. A tutorial step can ride this tap
+            // (advance-on-tap) so the next step continues on the Details page.
+            Button(
+                onClick = onOpenDetails,
+                modifier = Modifier.fillMaxWidth().guideFlowAnchor("open_details_button"),
+            ) { Text("Open Details") }
+
             Spacer(Modifier.weight(1f))
 
             // One button per published flow from the portal (plus any local fallback).
@@ -159,6 +173,50 @@ private fun DemoScreen() {
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(flow.name) }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DetailsScreen(onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Details") },
+                navigationIcon = {
+                    TextButton(onClick = onBack) { Text("←") }
+                },
+            )
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text("Account details", style = MaterialTheme.typography.headlineSmall)
+
+            Card(modifier = Modifier.fillMaxWidth().guideFlowAnchor("details_card")) {
+                Column(Modifier.padding(20.dp)) {
+                    Text("Monthly summary", style = MaterialTheme.typography.titleMedium)
+                    Text("Your spending breakdown for this month.")
+                }
+            }
+
+            Button(
+                onClick = {},
+                modifier = Modifier.guideFlowAnchor("save_button"),
+            ) { Text("Save changes") }
+
+            Spacer(Modifier.weight(1f))
+
+            Button(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Back to Home") }
         }
     }
 }
