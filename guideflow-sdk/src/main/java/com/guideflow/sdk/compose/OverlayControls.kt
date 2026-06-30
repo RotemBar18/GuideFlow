@@ -2,6 +2,7 @@ package com.guideflow.sdk.compose
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -98,12 +99,17 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
  * set (advance-on-tap steps), taps inside that rect are left unconsumed so they
  * reach the host element underneath.
  */
-internal fun Modifier.consumeTaps(hole: Rect? = null): Modifier =
-    pointerInput(hole) {
+internal fun Modifier.consumeTaps(hole: Rect? = null, onHoleTap: (() -> Unit)? = null): Modifier =
+    pointerInput(hole, onHoleTap) {
         awaitEachGesture {
             // requireUnconsumed = true: if a control already handled this tap, skip it.
             val down = awaitFirstDown(requireUnconsumed = true)
-            if (hole != null && hole.contains(down.position)) return@awaitEachGesture
+            if (hole != null && hole.contains(down.position)) {
+                // Leave it unconsumed so the host element under the hole handles the
+                // tap (e.g. its onClick / navigation); use the same tap to advance.
+                if (waitForUpOrCancellation() != null) onHoleTap?.invoke()
+                return@awaitEachGesture
+            }
             down.consume()
             do {
                 val event = awaitPointerEvent()

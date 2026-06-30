@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.guideflow.sdk.anchor.AnchorInfo
+import com.guideflow.sdk.api.GuideFlow
 import com.guideflow.sdk.flow.ActiveFlowState
 import kotlin.math.roundToInt
 
@@ -39,7 +40,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
     val accent = theme.accentColorOrDefault()
     // Block the host UI; on advance-on-tap steps leave a hole over the anchor.
     val hole = if (state.currentStep.advanceOnTap) anchor.bounds else null
-    Box(Modifier.fillMaxSize().consumeTaps(hole))
+    Box(Modifier.fillMaxSize().consumeTaps(hole, onHoleTap = { GuideFlow.coordinator.next() }))
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val maxWidthPx = with(density) { maxWidth.toPx() }

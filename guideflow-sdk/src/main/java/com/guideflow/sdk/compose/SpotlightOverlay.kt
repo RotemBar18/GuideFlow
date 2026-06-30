@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.guideflow.sdk.anchor.AnchorInfo
+import com.guideflow.sdk.api.GuideFlow
 import com.guideflow.sdk.flow.ActiveFlowState
 
 /**
@@ -35,7 +36,11 @@ import com.guideflow.sdk.flow.ActiveFlowState
 internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
     val theme = state.activeTheme()
     val hole = if (state.currentStep.advanceOnTap) anchor.bounds else null
-    Box(Modifier.fillMaxSize().consumeTaps(hole).testTag(GuideFlowOverlayTags.SPOTLIGHT)) {
+    Box(
+        Modifier.fillMaxSize()
+            .consumeTaps(hole, onHoleTap = { GuideFlow.coordinator.next() })
+            .testTag(GuideFlowOverlayTags.SPOTLIGHT),
+    ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
