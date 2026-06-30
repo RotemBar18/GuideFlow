@@ -223,12 +223,10 @@ private fun ThemedPreview(
             Column(
                 Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(corner.dp)).background(cardColor).padding(16.dp),
             ) {
-                if (showSkip) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
-                    }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    if (showSkip) Text(skipLabel, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
                 }
-                Text("Welcome", color = textColor, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Text("This is how your tutorial looks.", color = textColor.copy(alpha = 0.7f), fontSize = 12.sp)
                 if (showProgress) {
                     Spacer(Modifier.height(8.dp))

@@ -32,15 +32,15 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier)
     val step = state.currentStep
     val theme = state.activeTheme()
     Column(modifier) {
-        if (theme.showSkip) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(step.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            if (theme.showSkip) {
                 TextButton(
                     onClick = { coordinator.skip() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.SKIP),
                 ) { Text(theme.skipLabel) }
             }
         }
-        Text(step.title, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(6.dp))
         Text(step.body, style = MaterialTheme.typography.bodyMedium)
         if (theme.showProgress) {
