@@ -41,17 +41,17 @@ The backend is deployed on Google Cloud Run and works from any network:
 
 ## Screenshots
 
-The SDK in the Pulse demo app (library, player, and the three overlay types):
+The SDK running in the Pulse demo app: the home and player screens, and two overlay types (spotlight and modal) rendered over the live app.
 
-| Library | Player | Tooltip | Spotlight | Modal |
-|---|---|---|---|---|
-| ![library](docs/screenshots/app-library.png) | ![player](docs/screenshots/app-player.png) | ![tooltip](docs/screenshots/tooltip.png) | ![spotlight](docs/screenshots/spotlight.png) | ![modal](docs/screenshots/modal.png) |
+| Library | Player | Spotlight | Modal |
+|---|---|---|---|
+| ![library](docs/screenshots/demoapp_mainScreen.jpeg) | ![player](docs/screenshots/demoapp_mediaplayer.jpeg) | ![spotlight](docs/screenshots/demoapp_spotlight_demo.jpeg) | ![modal](docs/screenshots/demoapp_modal_demo.jpeg) |
 
-The authoring portal:
+Authoring in the portal: Google sign-in, the step editor with a live themed preview (a tooltip here), the per-flow appearance editor, and the analytics view.
 
-| Login | Projects | Flows | Step editor | Appearance | Analytics |
-|---|---|---|---|---|---|
-| ![login](docs/screenshots/login.png) | ![projects](docs/screenshots/projects.png) | ![flows](docs/screenshots/flows.png) | ![step editor](docs/screenshots/step-editor.png) | ![appearance](docs/screenshots/appearance.png) | ![analytics](docs/screenshots/analytics.png) |
+| Login | Step editor | Appearance | Analytics |
+|---|---|---|---|
+| ![login](docs/screenshots/portal_login.jpeg) | ![step editor](docs/screenshots/portal_editStep_tooltip.jpeg) | ![appearance](docs/screenshots/portal_theme_dark.jpeg) | ![analytics](docs/screenshots/portal_analytics.jpeg) |
 
 ## Published config (JSON)
 
