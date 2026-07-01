@@ -78,7 +78,25 @@ The key idea: the app always fetches **one** config document for its project key
 
 ## 4. Integrate the SDK, step by step
 
-This is the whole integration. A minimal app needs steps 1, 2, 4, 5, and 6.
+### The whole integration (4 lines)
+
+A complete setup is four calls. `baseUrl` defaults to the hosted backend, and `initialize` refreshes config in the background, so nothing else is required.
+
+```kotlin
+GuideFlow.initialize(this, "gf_your_key")                     // 1. once at startup
+
+setContent {
+    GuideFlowHost {                                            // 2. once at the root
+        Button(Modifier.guideFlowAnchor("budget_button")) {   // 3. tag anything a step points at
+            Text("Budget")
+        }
+    }
+}
+
+GuideFlow.startFlow("budget_tutorial")                         // 4. run a published tutorial
+```
+
+Everything below explains these four, plus the optional extras (`setUser`, `setListener`, manual `refreshConfig`, `flush`). You can skip the optional ones entirely.
 
 ### Step 1: Add the library
 
@@ -93,15 +111,19 @@ The SDK declares the `INTERNET` permission itself; it merges into your app. No o
 
 ### Step 2: Initialize once at startup
 
-Call this before you show any tutorial, typically in your `Activity.onCreate` or `Application`.
+Call this before you show any tutorial, typically in your `Activity.onCreate` or `Application`. The project key is all you need:
+
+```kotlin
+GuideFlow.initialize(context = this, projectKey = "gf_your_key")
+```
+
+Pass a `GuideFlowConfig` only if you want to change a default:
 
 ```kotlin
 GuideFlow.initialize(
-    context = applicationContext,
-    projectKey = "gf_your_key",   // from the portal, shown once at project creation
-    config = GuideFlowConfig(
-        baseUrl = "https://guideflow-backend-794711970205.me-west1.run.app",
-    ),
+    context = this,
+    projectKey = "gf_your_key",
+    config = GuideFlowConfig(debugLogging = true),
 )
 ```
 
@@ -109,12 +131,12 @@ GuideFlow.initialize(
 
 | Field | Default | What it does |
 |---|---|---|
-| `baseUrl` | required | Backend URL. Use the hosted one above, or your own. On a physical device do not use `localhost`; use your machine's LAN IP if you self-host. |
+| `baseUrl` | hosted backend | Backend URL. Already set to the hosted backend; override only to run your own. On a physical device do not use `localhost`; use your machine's LAN IP if you self-host. |
 | `enableAnalytics` | `true` | Collect and upload flow/step events. Set `false` to turn analytics off entirely. |
 | `enableOfflineCache` | `true` | Persist the last good config to DataStore so tutorials work offline and start instantly. |
 | `debugLogging` | `false` | Log actionable messages to Logcat under the tag `GuideFlow` (wrong flow key prints the known keys; a missing anchor prints which anchor to add). Keep off in release. |
 
-`initialize` loads any cached config immediately, then refreshes from the backend in the background (keeping the cache if the refresh fails).
+`initialize` loads any cached config immediately, then refreshes from the backend in the background (keeping the cache if the refresh fails), so you do not need to call `refreshConfig()` yourself for the normal case.
 
 ### Step 3: Identify the user (optional)
 
@@ -193,16 +215,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        GuideFlow.initialize(
-            context = applicationContext,
-            projectKey = "gf_your_key",
-            config = GuideFlowConfig(
-                baseUrl = "https://guideflow-backend-794711970205.me-west1.run.app",
-                debugLogging = true,
-            ),
-        )
+        // Required. baseUrl defaults to the hosted backend; config is optional.
+        GuideFlow.initialize(this, "gf_your_key", GuideFlowConfig(debugLogging = true))
+
+        // Optional: associate a user, and listen to lifecycle/errors.
         GuideFlow.setUser("user-123")
-        lifecycleScope.launch { GuideFlow.refreshConfig() }
 
         setContent {
             GuideFlowHost {
@@ -296,7 +313,7 @@ The font is intentionally not themeable; overlay text uses the host app's own ty
 object GuideFlow {
     const val SDK_VERSION: String
 
-    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig)
+    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig = GuideFlowConfig())
     fun setUser(userId: String?)                   // hashed (SHA-256) before use
     fun setListener(listener: GuideFlowListener?)
     fun loadLocalFlows(flows: List<TutorialFlow>)  // local fallback, used per missing key

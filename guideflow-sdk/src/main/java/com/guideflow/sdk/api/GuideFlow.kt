@@ -49,7 +49,7 @@ object GuideFlow {
      * Initialize the SDK: load any cached config immediately, then refresh from the
      * backend in the background (keeping the cache if the refresh fails).
      */
-    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig) {
+    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig = GuideFlowConfig()) {
         this.projectKey = projectKey
         GuideFlowLog.enabled = config.debugLogging
         GuideFlowLog.d("initialize(projectKey=$projectKey, baseUrl=${config.baseUrl})")

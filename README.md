@@ -133,7 +133,7 @@ Project keys are never stored raw. Only `projectKeyHash` (SHA-256) is stored; th
 object GuideFlow {
     const val SDK_VERSION: String
 
-    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig)
+    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig = GuideFlowConfig())
     fun setUser(userId: String?)                  // hashed (SHA-256) before use
     fun setListener(listener: GuideFlowListener?)
     suspend fun refreshConfig(): Result<Unit>     // fetch latest published config
@@ -152,7 +152,7 @@ Supporting types:
 
 ```kotlin
 data class GuideFlowConfig(
-    val baseUrl: String,
+    val baseUrl: String = DEFAULT_BASE_URL,   // hosted backend; override only to self-host
     val enableAnalytics: Boolean = true,
     val enableOfflineCache: Boolean = true,
     val debugLogging: Boolean = false,
@@ -316,25 +316,21 @@ erDiagram
 
 ## Quick start (use the SDK)
 
-The backend is already hosted on Cloud Run, so adopting the SDK needs no server setup: add the library, point `baseUrl` at the hosted URL, and use a project key from the portal.
+The backend is already hosted on Cloud Run, so adopting the SDK needs no server setup. The whole integration is four calls (`baseUrl` defaults to the hosted backend, and `initialize` refreshes config in the background):
 
 ```kotlin
-GuideFlow.initialize(
-    context = applicationContext,
-    projectKey = "gf_your_key",          // from the portal, shown once
-    config = GuideFlowConfig(baseUrl = "https://guideflow-backend-794711970205.me-west1.run.app"),
-)
+GuideFlow.initialize(this, "gf_your_key")             // 1. once at startup
 
 setContent {
-    GuideFlowHost {                       // place once near the root
-        Button(modifier = Modifier.guideFlowAnchor("budget_button")) { Text("Budget") }
+    GuideFlowHost {                                     // 2. once at the root
+        Button(Modifier.guideFlowAnchor("budget_button")) { Text("Budget") }   // 3. tag targets
     }
 }
 
-GuideFlow.startFlow("budget_tutorial")    // run a published tutorial
+GuideFlow.startFlow("budget_tutorial")                 // 4. run a published tutorial
 ```
 
-That is the whole integration. Open the **portal app**, sign in, create a project, author a flow, and publish; the host app picks it up on the next `refreshConfig()`.
+`setUser`, `setListener`, `refreshConfig`, and `flush` are all optional. Open the **portal app**, sign in, create a project, author a flow, and publish; the host app picks it up on its next launch. See the [full guide](docs/documentation.md).
 
 ## Tech stack
 

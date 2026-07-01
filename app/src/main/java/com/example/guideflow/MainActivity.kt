@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -40,39 +39,28 @@ import com.guideflow.shared.FlowStatus
 import com.guideflow.shared.StepType
 import com.guideflow.shared.TutorialFlow
 import com.guideflow.shared.TutorialStep
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Offline fallback: the hardcoded tour is used if remote config is empty
-        // or the backend is unreachable.
+        // REQUIRED: initialize once. baseUrl defaults to the hosted backend, and this
+        // also refreshes config in the background, so refreshConfig() is not needed here.
+        GuideFlow.initialize(applicationContext, PROJECT_KEY, GuideFlowConfig(debugLogging = true))
+
+        // OPTIONAL below. Local flows are an offline fallback used only for keys the
+        // backend doesn't define; setUser and setListener are conveniences.
         GuideFlow.loadLocalFlows(listOf(demoTour))
+        GuideFlow.setUser("demo-user-001")
         GuideFlow.setListener(object : GuideFlowListener {
             override fun onFlowStarted(flowKey: String) { Log.d(TAG, "started $flowKey") }
             override fun onStepChanged(flowKey: String, stepIndex: Int) { Log.d(TAG, "step $stepIndex") }
             override fun onFlowCompleted(flowKey: String) { Log.d(TAG, "completed $flowKey") }
             override fun onFlowSkipped(flowKey: String) { Log.d(TAG, "skipped $flowKey") }
-            override fun onAnchorMissing(flowKey: String, anchorKey: String) {
-                Log.d(TAG, "anchor missing: $anchorKey")
-            }
+            override fun onAnchorMissing(flowKey: String, anchorKey: String) { Log.d(TAG, "anchor missing: $anchorKey") }
             override fun onError(error: GuideFlowError) { Log.w(TAG, "error: $error") }
         })
-
-        // Phase 3: initialize remote config. Paste a real key from POST /api/projects
-        // and set BASE_URL to your machine's LAN IP to serve the tour from the backend.
-        GuideFlow.initialize(
-            context = applicationContext,
-            projectKey = PROJECT_KEY,
-            config = GuideFlowConfig(baseUrl = BASE_URL, debugLogging = true),
-        )
-        GuideFlow.setUser("demo-user-001")
-        lifecycleScope.launch {
-            val result = GuideFlow.refreshConfig()
-            Log.d(TAG, "refreshConfig: $result")
-        }
 
         enableEdgeToEdge()
         setContent {
@@ -93,11 +81,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "GuideFlowDemo"
 
-        // Hosted backend (Cloud Run) — works on any network.
-        private const val BASE_URL = "https://guideflow-backend-794711970205.me-west1.run.app"
-
-        // Paste a real key returned by POST /api/projects to load the tour remotely.
-        // Until then, refresh fails and the demo uses the hardcoded fallback above.
+        // Project key from the portal. baseUrl defaults to the hosted backend.
         private const val PROJECT_KEY = "gf_42dbf36e28c81890a6b2aba336bef328"
     }
 }
