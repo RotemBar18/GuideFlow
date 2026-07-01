@@ -96,9 +96,20 @@ fun ProjectsScreen(
                     TextButton(onClick = { scope.launch { reload() } }) { Text("↻", fontSize = 18.sp, color = Gf.textSecondary) }
                     Box {
                         TextButton(onClick = { menuOpen = true }) { Text("⋮", fontSize = 20.sp, color = Gf.textSecondary) }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(text = { Text("Take a tour") }, onClick = { menuOpen = false; onStartTour() })
-                            DropdownMenuItem(text = { Text("Sign out") }, onClick = { menuOpen = false; onSignOut() })
+                        DropdownMenu(
+                            expanded = menuOpen, onDismissRequest = { menuOpen = false },
+                            modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Take a tour", color = Gf.ink) },
+                                leadingIcon = { Text("✨", fontSize = 15.sp) },
+                                onClick = { menuOpen = false; onStartTour() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sign out", color = Gf.ink) },
+                                leadingIcon = { Text("⎋", fontSize = 16.sp) },
+                                onClick = { menuOpen = false; onSignOut() },
+                            )
                         }
                     }
                 }
@@ -203,8 +214,15 @@ private fun ProjectCard(project: ProjectDto, modifier: Modifier = Modifier, onCl
                         "⋮", color = Gf.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable { menu = true }.padding(horizontal = 6.dp),
                     )
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
+                    DropdownMenu(
+                        expanded = menu, onDismissRequest = { menu = false },
+                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = Gf.errorFg) },
+                            leadingIcon = { Text("🗑", fontSize = 15.sp) },
+                            onClick = { menu = false; onDelete() },
+                        )
                     }
                 }
                 Text("›", color = Gf.textFaint, fontSize = 18.sp)

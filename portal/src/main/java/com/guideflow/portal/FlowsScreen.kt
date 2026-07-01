@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -238,10 +239,25 @@ private fun FlowCard(flow: TutorialFlow, isFirst: Boolean = false, onClick: () -
                         modifier = (if (isFirst) Modifier.guideFlowAnchor("portal_flow_menu") else Modifier)
                             .clickable { menu = true }.padding(start = 12.dp, end = 2.dp),
                     )
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("Rename") }, onClick = { menu = false; onRename() })
-                        DropdownMenuItem(text = { Text("Duplicate") }, onClick = { menu = false; onDuplicate() })
-                        DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
+                    DropdownMenu(
+                        expanded = menu, onDismissRequest = { menu = false },
+                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Rename", color = Gf.ink) },
+                            leadingIcon = { Text("✎", fontSize = 16.sp) },
+                            onClick = { menu = false; onRename() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Duplicate", color = Gf.ink) },
+                            leadingIcon = { Text("⧉", fontSize = 16.sp) },
+                            onClick = { menu = false; onDuplicate() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = Gf.errorFg) },
+                            leadingIcon = { Text("🗑", fontSize = 15.sp) },
+                            onClick = { menu = false; onDelete() },
+                        )
                     }
                 }
             }
