@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.guideflow.portal.ui.BlockingOverlay
 import com.guideflow.portal.ui.ErrorStateView
 import com.guideflow.portal.ui.EmptyState
 import com.guideflow.portal.ui.Gf
@@ -75,6 +76,7 @@ fun ProjectsScreen(
     var showCreate by remember { mutableStateOf(false) }
     var revealedKey by remember { mutableStateOf<String?>(null) }
     var deleteTarget by remember { mutableStateOf<ProjectDto?>(null) }
+    var busy by remember { mutableStateOf(false) }
 
     suspend fun reload() {
         loading = true; error = null
@@ -171,10 +173,12 @@ fun ProjectsScreen(
                 Button(
                     onClick = {
                         deleteTarget = null
+                        busy = true
                         scope.launch {
                             runCatching { api.deleteProject(target.projectId, getToken()) }
                                 .onSuccess { reload() }
                                 .onFailure { error = it.message ?: "Failed to delete project" }
+                            busy = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Gf.errorFg),
@@ -183,6 +187,8 @@ fun ProjectsScreen(
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
         )
     }
+
+    if (busy) BlockingOverlay("Deleting project...")
 }
 
 @Composable

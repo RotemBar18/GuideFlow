@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.guideflow.portal.ui.BlockingOverlay
 import com.guideflow.portal.ui.EmptyState
 import com.guideflow.portal.ui.ErrorStateView
 import com.guideflow.portal.ui.Gf
@@ -72,6 +73,7 @@ fun FlowsScreen(
     var deleteTarget by remember { mutableStateOf<TutorialFlow?>(null) }
     var renameTarget by remember { mutableStateOf<TutorialFlow?>(null) }
     var duplicateTarget by remember { mutableStateOf<TutorialFlow?>(null) }
+    var busy by remember { mutableStateOf(false) }
 
     suspend fun reload() {
         loading = true; error = null
@@ -209,10 +211,12 @@ fun FlowsScreen(
                 Button(
                     onClick = {
                         deleteTarget = null
+                        busy = true
                         scope.launch {
                             runCatching { api.deleteFlow(target.id, getToken()) }
                                 .onSuccess { reload() }
                                 .onFailure { error = it.message ?: "Failed to delete flow" }
+                            busy = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Gf.errorFg),
@@ -221,6 +225,8 @@ fun FlowsScreen(
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
         )
     }
+
+    if (busy) BlockingOverlay("Deleting flow...")
 }
 
 @Composable
