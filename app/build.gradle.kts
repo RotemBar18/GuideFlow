@@ -38,7 +38,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":guideflow-sdk"))
+    // The demo consumes the SDK from JitPack (the published library), like a real app would.
+    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.1.0")
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

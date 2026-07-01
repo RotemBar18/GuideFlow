@@ -17,7 +17,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.0.0")
+    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.1.0")
 }
 ```
 

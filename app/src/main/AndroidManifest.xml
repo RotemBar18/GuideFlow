@@ -11,6 +11,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GuideFlow">
+
+        <!-- Auto-init: the SDK initializes itself at startup from these values,
+             so no GuideFlow.initialize(...) call is needed in code. -->
+        <meta-data android:name="com.guideflow.PROJECT_KEY" android:value="gf_e44af65c82025541cf566151b4c57dd4" />
+        <meta-data android:name="com.guideflow.DEBUG_LOGGING" android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

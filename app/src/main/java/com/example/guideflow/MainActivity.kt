@@ -41,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.sdk.api.GuideFlow
-import com.guideflow.sdk.api.GuideFlowConfig
 import com.guideflow.sdk.compose.GuideFlowHost
 import com.guideflow.sdk.compose.guideFlowAnchor
 import kotlinx.coroutines.delay
@@ -80,10 +79,8 @@ private enum class Screen { Library, Player }
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // The only required SDK setup: initialize with the project key.
-        GuideFlow.initialize(applicationContext, PROJECT_KEY, GuideFlowConfig(debugLogging = true))
-
+        // No GuideFlow.initialize(...) here: the SDK auto-initializes from the
+        // com.guideflow.PROJECT_KEY meta-data in AndroidManifest.xml.
         enableEdgeToEdge()
         setContent {
             val prefs = remember { getSharedPreferences("pulse", Context.MODE_PRIVATE) }
@@ -114,8 +111,6 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        // Project key from the portal (the "Pulse Demo" project). baseUrl defaults to the hosted backend.
-        private const val PROJECT_KEY = "gf_e44af65c82025541cf566151b4c57dd4"
         private const val TOUR = "pulse_onboarding"
     }
 }
