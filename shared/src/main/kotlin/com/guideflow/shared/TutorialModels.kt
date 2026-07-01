@@ -57,7 +57,25 @@ data class FlowTheme(
     val showProgress: Boolean = true,
     val showSkip: Boolean = true,
     val showBack: Boolean = true, // hide Back for flows that change screens (Back can't un-navigate)
-)
+) {
+    companion object {
+        /** Classic light theme applied to a newly created flow's light variant. */
+        val CLASSIC_LIGHT = FlowTheme(
+            accentColor = "#4F5BD5",
+            buttonTextColor = "#FFFFFF",
+            backgroundColor = "#FFFFFF",
+            textColor = "#11141B",
+        )
+
+        /** Classic dark theme applied to a newly created flow's dark variant. */
+        val CLASSIC_DARK = FlowTheme(
+            accentColor = "#7C3AED",
+            buttonTextColor = "#FFFFFF",
+            backgroundColor = "#1B1F27",
+            textColor = "#FFFFFF",
+        )
+    }
+}
 
 /** Renders the step counter from [FlowTheme.progressFormat], substituting the placeholders. */
 fun FlowTheme.progressText(current: Int, total: Int): String =

@@ -23,7 +23,6 @@ import com.guideflow.sdk.flow.ActiveFlowState
 @Composable
 internal fun ModalFallback(state: ActiveFlowState) {
     val theme = state.activeTheme()
-    val bg = theme.backgroundColorOrNull()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -35,7 +34,7 @@ internal fun ModalFallback(state: ActiveFlowState) {
         Card(
             modifier = Modifier.padding(32.dp).widthIn(max = 360.dp),
             shape = RoundedCornerShape(theme.cornerRadius.dp),
-            colors = if (bg != null) CardDefaults.cardColors(containerColor = bg) else CardDefaults.cardColors(),
+            colors = CardDefaults.cardColors(containerColor = theme.cardColorOrDefault()),
         ) {
             StepControls(state, Modifier.padding(20.dp))
         }

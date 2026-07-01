@@ -8,7 +8,6 @@ import java.security.SecureRandom
  * developer once at creation; only its SHA-256 hash is stored (CLAUDE.md → "Project Key").
  */
 object ProjectKeys {
-
     private val random = SecureRandom()
 
     /** A fresh key like `gf_3f9a...` (16 random bytes, hex). Not a secret. */

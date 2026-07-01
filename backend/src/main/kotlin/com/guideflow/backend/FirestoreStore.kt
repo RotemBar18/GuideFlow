@@ -98,6 +98,8 @@ class FirestoreStore(
             name = name,
             status = FlowStatus.DRAFT,
             steps = emptyList(),
+            theme = FlowTheme.CLASSIC_LIGHT,
+            themeDark = FlowTheme.CLASSIC_DARK,
         )
         flows.document(record.flowId).set(record.toMap()).get()
         return record

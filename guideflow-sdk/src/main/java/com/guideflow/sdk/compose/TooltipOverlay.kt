@@ -75,7 +75,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                 .onSizeChanged { cardSize = it }
                 .testTag(GuideFlowOverlayTags.TOOLTIP),
             shape = RoundedCornerShape(theme.cornerRadius.dp),
-            colors = theme.backgroundColorOrNull()?.let { CardDefaults.cardColors(containerColor = it) } ?: CardDefaults.cardColors(),
+            colors = CardDefaults.cardColors(containerColor = theme.cardColorOrDefault()),
         ) {
             StepControls(state, Modifier.padding(16.dp), advanceByTap = state.currentStep.advanceOnTap)
         }

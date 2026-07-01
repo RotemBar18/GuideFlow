@@ -78,7 +78,6 @@ internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
         val belowY = anchor.bounds.bottom + gapPx
         val fitsBelow = belowY + cardHeightPx <= maxHeightPx - marginPx
         val yPx = if (fitsBelow) belowY else (anchor.bounds.top - gapPx - cardHeightPx).coerceAtLeast(marginPx)
-        val bg = theme.backgroundColorOrNull()
         Card(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -87,7 +86,7 @@ internal fun SpotlightOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                 .fillMaxWidth()
                 .onSizeChanged { cardHeightPx = it.height },
             shape = RoundedCornerShape(theme.cornerRadius.dp),
-            colors = if (bg != null) CardDefaults.cardColors(containerColor = bg) else CardDefaults.cardColors(),
+            colors = CardDefaults.cardColors(containerColor = theme.cardColorOrDefault()),
         ) {
             StepControls(state, Modifier.padding(16.dp), advanceByTap = state.currentStep.advanceOnTap)
         }

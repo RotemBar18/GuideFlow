@@ -49,14 +49,15 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
     val theme = state.activeTheme()
     // Apply RTL to the text content only; overlay placement stays LTR (see GuideFlowHost).
     val dir = if (state.flow.theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
-    val textColor = theme.textColorOrNull() ?: Color.Unspecified
+    // Match the portal preview: title full-strength, body/skip/back muted, progress fainter.
+    val content = theme.contentColorOrDefault()
     CompositionLocalProvider(LocalLayoutDirection provides dir) {
     Column(modifier) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 step.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = textColor,
+                color = content,
                 fontSize = theme.titleSize.sp,
                 modifier = Modifier.weight(1f),
             )
@@ -64,17 +65,17 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                 TextButton(
                     onClick = { coordinator.skip() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.SKIP),
-                ) { Text(theme.skipLabel, color = textColor) }
+                ) { Text(theme.skipLabel, color = content.copy(alpha = 0.7f)) }
             }
         }
         Spacer(Modifier.height(6.dp))
-        Text(step.body, style = MaterialTheme.typography.bodyMedium, color = textColor, fontSize = theme.bodySize.sp)
+        Text(step.body, style = MaterialTheme.typography.bodyMedium, color = content.copy(alpha = 0.7f), fontSize = theme.bodySize.sp)
         if (theme.showProgress) {
             Spacer(Modifier.height(10.dp))
             Text(
                 theme.progressText(state.currentStepIndex + 1, state.totalSteps),
                 style = MaterialTheme.typography.labelSmall,
-                color = textColor,
+                color = content.copy(alpha = 0.55f),
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -86,7 +87,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                 TextButton(
                     onClick = { coordinator.back() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.BACK),
-                ) { Text(theme.backLabel, color = textColor) }
+                ) { Text(theme.backLabel, color = content.copy(alpha = 0.7f)) }
             }
             Spacer(Modifier.weight(1f))
             // Advance-on-tap steps have no Next button; the user taps the element instead.

@@ -151,6 +151,8 @@ class InMemoryStore : GuideFlowStore {
             name = name,
             status = FlowStatus.DRAFT,
             steps = emptyList(),
+            theme = FlowTheme.CLASSIC_LIGHT,
+            themeDark = FlowTheme.CLASSIC_DARK,
         )
         flows[record.flowId] = record
         record

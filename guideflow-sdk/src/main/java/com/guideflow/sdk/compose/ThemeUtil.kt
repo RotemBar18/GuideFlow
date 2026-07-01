@@ -27,3 +27,20 @@ internal fun FlowTheme.backgroundColorOrNull(): Color? = backgroundColor?.toColo
 
 /** Custom title/body text colour, or null to follow the host/card default. */
 internal fun FlowTheme.textColorOrNull(): Color? = textColor?.toColorOrNull()
+
+// Defaults below match the portal's live preview exactly, so a flow with no custom
+// colours renders the same in the app as in the editor (independent of the host theme).
+private val DEFAULT_CARD_LIGHT = Color.White
+private val DEFAULT_CARD_DARK = Color(0xFF1B1F27)
+private val DEFAULT_TEXT_LIGHT = Color(0xFF11141B)
+private val DEFAULT_TEXT_DARK = Color.White
+
+/** Card background: the theme's colour, or the default (white / dark-navy by device mode). */
+@Composable
+internal fun FlowTheme.cardColorOrDefault(): Color =
+    backgroundColorOrNull() ?: if (isSystemInDarkTheme()) DEFAULT_CARD_DARK else DEFAULT_CARD_LIGHT
+
+/** Title/body text colour: the theme's colour, or the default (near-black / white by device mode). */
+@Composable
+internal fun FlowTheme.contentColorOrDefault(): Color =
+    textColorOrNull() ?: if (isSystemInDarkTheme()) DEFAULT_TEXT_DARK else DEFAULT_TEXT_LIGHT
