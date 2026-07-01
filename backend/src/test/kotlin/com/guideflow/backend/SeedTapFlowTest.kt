@@ -226,6 +226,7 @@ class SeedTapFlowTest {
             accentColor = "#EC4899",
             buttonTextColor = "#FFFFFF",
             backgroundColor = "#211C2E",
+            textColor = "#F4F1FA", // light text on the dark card
             cornerRadius = 18,
             dimOpacity = 0.72f,
             showBack = false,
