@@ -2,9 +2,13 @@
 
 A Kotlin and Jetpack Compose Android SDK for interactive in-app tutorials (tooltips, spotlights, and modals). Tutorials are authored in a companion portal, published through a Ktor backend, and stored in Cloud Firestore. Any app that embeds the SDK downloads the published configuration at runtime and renders the tour, so changing a tutorial does not require a new app release.
 
-## Description
+> Author a tour in the portal, press Publish, and live apps pick it up on the next launch. No app store update.
 
-GuideFlow is a locally runnable ecosystem of five modules:
+**Jump to:** [Features](#features) · [Published config](#published-config-json) · [Database](#database-cloud-firestore) · [SDK API](#public-functions-sdk-api) · [Endpoints](#rest-endpoints) · [Architecture](#architecture-diagram) · [Quick start](#quick-start-use-the-sdk) · [Full docs](docs/documentation.md)
+
+## Overview
+
+GuideFlow is an ecosystem of five modules:
 
 | Module | What it is | Tech |
 |---|---|---|

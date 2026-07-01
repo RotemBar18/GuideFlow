@@ -1,85 +1,192 @@
-# GuideFlow SDK - Documentation
+# GuideFlow SDK Documentation
 
-## Title
+Interactive in-app tutorials for Jetpack Compose apps, authored in a portal and delivered over the air.
 
-GuideFlow SDK: interactive in-app tutorials for Jetpack Compose Android apps.
+> Change a tutorial by editing it in the portal and pressing Publish. Live apps pick it up on their next launch, with no new app release.
 
-## Description
+---
 
-GuideFlow is an Android library that overlays guided tutorials (tooltips, spotlights, and modal dialogs) on top of an existing Compose app. Tutorial content is not hard-coded in the app. Developers author it in a companion portal, publish it through a Ktor backend, and the backend compiles it into a single configuration document stored in Cloud Firestore. Any app that embeds the SDK downloads that config at runtime and renders the tour, so changing a tutorial does not require a new app release; the developer just re-publishes in the portal.
+## Contents
 
-The system has five parts: the SDK (`guideflow-sdk`), a demo host app (`app`), the authoring portal (`portal`), the backend (`backend`), and shared DTOs (`shared`). The backend is deployed on Google Cloud Run, so the portal and SDK work from any network.
+1. [What GuideFlow is](#1-what-guideflow-is)
+2. [Core concepts](#2-core-concepts)
+3. [How a tutorial reaches a user](#3-how-a-tutorial-reaches-a-user)
+4. [Integrate the SDK, step by step](#4-integrate-the-sdk-step-by-step)
+5. [Author a tutorial in the portal](#5-author-a-tutorial-in-the-portal)
+6. [Step types](#6-step-types)
+7. [Theming reference](#7-theming-reference)
+8. [Behaviour you can rely on](#8-behaviour-you-can-rely-on)
+9. [Public API reference](#9-public-api-reference)
+10. [Troubleshooting and FAQ](#10-troubleshooting-and-faq)
+11. [Privacy and security](#11-privacy-and-security)
 
-## Use cases
+---
 
-- User onboarding: walk a first-time user through the core screens, such as creating a first budget.
-- Feature discovery: point out a new button or screen with a tooltip or spotlight.
-- Contextual help: trigger a relevant flow from a help button on any screen with `startFlow("...")`.
-- Tutorial iteration without releases: edit and re-publish a flow in the portal, and live apps pick it up on the next launch.
-- Multiple apps, one console: each app is a project with its own key, and one portal account manages them all.
+## 1. What GuideFlow is
 
-## Features
+GuideFlow overlays guided tutorials (tooltips, spotlights, and modal dialogs) on top of an existing Jetpack Compose app. The tutorial content is not baked into the app. You author it in a companion portal, publish it through a hosted backend, and the SDK downloads it at runtime.
 
-- Tooltip, spotlight, and modal step types.
-- Multi-step flows with Next, Back, Skip, and Done. A flow keeps running across screen navigation, so a step can continue on the next page.
-- `Modifier.guideFlowAnchor("key")` to mark any composable as a target.
-- Advance-on-tap steps: the highlighted element stays interactive, so one tap runs the app's own action and advances the tour (no Next button on that step). The rest of the screen is blocked while a step is active.
-- Automatic modal fallback when an anchor is missing on screen, plus an anchor-missing callback. The SDK does not crash the host app.
-- Per-flow theming with separate light and dark designs (chosen by the device theme): accent and button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom button labels, a customizable step-counter format, and text size. The font follows the host app's own theme.
-- One-request remote config (`GET /api/client/config`) with `304 Not Modified` based on config version.
-- Offline cache in DataStore. A failed refresh keeps the last good config.
-- Analytics: flow and step events are queued locally (Room) and uploaded in the background (WorkManager); the backend aggregates per-flow summaries shown in the portal as a completion rate, metric tiles, and a per-step view chart.
-- Authoring portal with Google Sign-In, project management (create and delete) and flow management (create, rename, duplicate, delete), a step editor with a live themed preview, an appearance editor for the per-flow theme, publish-time validation, and a per-flow analytics view.
-- Security: Firebase ID-token verification, per-request project-ownership checks, SHA-256 hashed project keys, and hashed SDK user IDs.
+The system has five parts:
 
-## Implementation
+| Part | Role |
+|---|---|
+| `guideflow-sdk` | The Android library your app embeds to render tutorials. |
+| Portal app | Where you sign in, author flows and steps, theme them, publish, and read analytics. |
+| Backend | Ktor server on Cloud Run that stores content and serves one compiled config per project. |
+| Firestore | Stores projects, flows, steps, published configs, and analytics. |
+| `shared` | Serializable models shared by the SDK, backend, and portal. |
 
-### Architecture
+The backend is already hosted, so integrating the SDK needs no server work on your side.
 
-The portal (Android) signs in with Google through Firebase Auth and sends a Firebase ID token to the backend as a Bearer token when creating or publishing tutorials. The backend (Ktor on Cloud Run) verifies the token with the Firebase Admin SDK, checks the caller owns the project, and reads or writes Cloud Firestore. The host app and its embedded SDK call the backend with a project key (not a Firebase token) to fetch the published config.
+---
 
-Authoring path: portal authenticates with Google, gets a Firebase ID token, and calls the backend with `Authorization: Bearer <token>`. The backend verifies the token, checks ownership, and writes to Firestore.
+## 2. Core concepts
 
-Publish: validates the flow (at least one step, unique step order, tooltip and spotlight steps have an anchor), compiles all published flows of the project into one TutorialConfig, bumps the project's `configVersion`, and stores it under `publishedConfigs/{projectId}`.
+Read these once; the rest of the docs assume them.
 
-Delivery path: the SDK calls `GET /api/client/config` with the project key. The backend looks up the project by the key's SHA-256 hash and returns the compiled config, or `304` when `currentVersion` matches.
+| Term | Meaning |
+|---|---|
+| **Project** | One app you are onboarding. It owns all of that app's tutorials and has a **project key** you paste into the SDK. |
+| **Flow** | One tutorial: an ordered list of steps, identified by a **flow key** (for example `budget_tutorial`). |
+| **Step** | One screen of a tutorial: a tooltip, spotlight, or modal, with a title and body. |
+| **Anchor** | An on-screen element a step points at. You tag it in code with `Modifier.guideFlowAnchor("key")`; a step references it by the same key. |
+| **Published config** | The single JSON document the backend compiles from a project's published flows. The SDK downloads exactly this, in one request. |
+| **Project key** | Identifies the app to the backend (`gf_...`). It is not a secret (it ships in the app); the backend stores only its hash. |
 
-### SDK internals
+Two different "users":
 
-- `AnchorManager`: Compose snapshot-state map of anchor key to bounds, populated by `guideFlowAnchor`.
-- `FlowCoordinator`: pure-Kotlin StateFlow engine holding the active flow and step index; handles Next/Back/Skip/Complete and blocks concurrent flows.
-- `GuideFlowHost` and overlays: render host content and, above it, the overlay for the current step; a missing anchor routes to `ModalFallback`.
-- `ConfigClient`, `ConfigRepository`, `ConfigStorage`: fetch (Ktor), keep last good config in memory, and persist to DataStore.
-- `AnalyticsManager`, `EventDatabase` (Room), `AnalyticsUploadWorker` (WorkManager): the coordinator emits events to the manager, which queues them in Room (capped at 1000) and schedules a worker that uploads batches and deletes only acknowledged events.
+- **Portal user**: you, the developer. Signs in with Google, owns projects.
+- **SDK end user**: a user of your app. Set with `setUser(...)`, only used to tag tutorial state and analytics, and hashed before it ever leaves the device. These are never mixed.
 
-### Backend internals
+---
 
-- `GuideFlowStore` interface with two implementations: `FirestoreStore` (production) and `InMemoryStore` (local dev and tests). Selected at startup by whether Firebase credentials are present.
-- `AuthProvider`: `FirebaseAuthProvider` (verifies ID tokens; on Cloud Run uses Application Default Credentials with an explicit project id) or `DevAuthProvider` (local, returns a fixed dev owner).
-- `ProjectKeys` (key generation and hashing), `FlowValidator`, `ConfigCompiler`.
+## 3. How a tutorial reaches a user
 
-### Data model (Firestore)
+```text
+You author in the portal
+        -> Publish (backend validates + compiles one config, bumps a version)
+        -> Cloud Firestore stores the published config
+Your app calls refreshConfig()
+        -> SDK downloads the one config (or gets 304 Not Modified) and caches it
+        -> startFlow("...") renders the tour over your UI
+        -> analytics events are queued and uploaded in the background
+```
 
-Flat collections `projects`, `flows`, `steps`, `publishedConfigs`. See the README ERD and database section.
+The key idea: the app always fetches **one** config document for its project key. Editing a tutorial never requires an app update, only a Publish.
 
-### Tech stack
+---
 
-Kotlin, Jetpack Compose, Ktor (client and server), kotlinx.serialization, DataStore, Firebase Authentication, Firebase Admin SDK, Cloud Firestore, Google Cloud Run, Gradle Kotlin DSL.
+## 4. Integrate the SDK, step by step
 
-## User initialization
+This is the whole integration. A minimal app needs steps 1, 2, 4, 5, and 6.
 
-### 1. Add the SDK
+### Step 1: Add the library
 
-In this repo the host app depends on the library module directly:
+In this repository the app depends on the module directly:
 
 ```kotlin
 // app/build.gradle.kts
 dependencies { implementation(project(":guideflow-sdk")) }
 ```
 
-The SDK declares the `INTERNET` permission itself, which merges into the host app. Talking to an HTTPS backend needs no extra manifest config.
+The SDK declares the `INTERNET` permission itself; it merges into your app. No other manifest change is needed for an HTTPS backend.
 
-### 2. Initialize once at startup
+### Step 2: Initialize once at startup
+
+Call this before you show any tutorial, typically in your `Activity.onCreate` or `Application`.
+
+```kotlin
+GuideFlow.initialize(
+    context = applicationContext,
+    projectKey = "gf_your_key",   // from the portal, shown once at project creation
+    config = GuideFlowConfig(
+        baseUrl = "https://guideflow-backend-794711970205.me-west1.run.app",
+    ),
+)
+```
+
+`GuideFlowConfig` options:
+
+| Field | Default | What it does |
+|---|---|---|
+| `baseUrl` | required | Backend URL. Use the hosted one above, or your own. On a physical device do not use `localhost`; use your machine's LAN IP if you self-host. |
+| `enableAnalytics` | `true` | Collect and upload flow/step events. Set `false` to turn analytics off entirely. |
+| `enableOfflineCache` | `true` | Persist the last good config to DataStore so tutorials work offline and start instantly. |
+| `debugLogging` | `false` | Log actionable messages to Logcat under the tag `GuideFlow` (wrong flow key prints the known keys; a missing anchor prints which anchor to add). Keep off in release. |
+
+`initialize` loads any cached config immediately, then refreshes from the backend in the background (keeping the cache if the refresh fails).
+
+### Step 3: Identify the user (optional)
+
+```kotlin
+GuideFlow.setUser("user-123")   // or null for anonymous
+```
+
+The id is hashed with SHA-256 before it is stored or uploaded. Pass `null` for anonymous users. This is only for tutorial state and analytics; it has nothing to do with the portal's Google sign-in.
+
+### Step 4: Host the overlay
+
+Wrap your app content once, near the root, so overlays draw above everything and anchors register as screens compose.
+
+```kotlin
+setContent {
+    GuideFlowHost {
+        AppContent()
+    }
+}
+```
+
+Place it a single time. It works across your own navigation, so a flow can continue on a different screen.
+
+### Step 5: Mark the elements a tutorial can point at
+
+```kotlin
+Button(
+    modifier = Modifier.guideFlowAnchor("budget_button"),
+    onClick = { },
+) { Text("Budget") }
+```
+
+Rules for anchor keys:
+
+- The string must match the step's **anchor key** set in the portal. This is the one contract between your code and the authored content.
+- Use stable, descriptive keys (`budget_button`, `profile_tab`). They are not user-visible.
+- Only the element that is actually on screen needs the anchor; a tooltip or spotlight for an element that is not currently shown falls back to a modal (see step 6 of the portal section and the behaviour section).
+- If the target sits below the fold in a scrollable screen, GuideFlow scrolls it into view automatically when its step runs.
+
+### Step 6: Start and stop flows
+
+```kotlin
+GuideFlow.startFlow("budget_tutorial")   // returns Result; also reported to the listener
+GuideFlow.stopFlow()                     // end the current flow early
+```
+
+Trigger `startFlow` wherever it makes sense: after first login, from a help button, or when a feature is first opened. Only one flow runs at a time.
+
+### Step 7: Listen to lifecycle and errors (optional)
+
+```kotlin
+GuideFlow.setListener(object : GuideFlowListener {
+    override fun onFlowStarted(flowKey: String) {}
+    override fun onStepChanged(flowKey: String, stepIndex: Int) {}
+    override fun onFlowCompleted(flowKey: String) {}
+    override fun onFlowSkipped(flowKey: String) {}
+    override fun onAnchorMissing(flowKey: String, anchorKey: String) {}
+    override fun onError(error: GuideFlowError) {}
+})
+```
+
+Every callback has a default empty body, so override only what you need. Errors are also returned from `startFlow` / `refreshConfig` as a `Result`, and, with `debugLogging = true`, printed to Logcat. The SDK never throws at your app.
+
+### Step 8: Analytics (automatic, with an optional manual flush)
+
+When `enableAnalytics` is on, the SDK records flow and step events into a local Room queue and uploads them in the background with WorkManager, deleting only the events the server acknowledges. You usually do nothing. To push immediately:
+
+```kotlin
+val accepted: Result<Int> = GuideFlow.flush()
+```
+
+### Full minimal example
 
 ```kotlin
 class MainActivity : ComponentActivity() {
@@ -88,55 +195,176 @@ class MainActivity : ComponentActivity() {
 
         GuideFlow.initialize(
             context = applicationContext,
-            projectKey = "gf_your_key",   // created in the portal, shown once
+            projectKey = "gf_your_key",
             config = GuideFlowConfig(
                 baseUrl = "https://guideflow-backend-794711970205.me-west1.run.app",
+                debugLogging = true,
             ),
         )
-        GuideFlow.setUser("user-123")      // optional; hashed before upload
-        GuideFlow.setListener(object : GuideFlowListener {
-            override fun onFlowCompleted(flowKey: String) { /* analytics */ }
-            override fun onError(error: GuideFlowError) { /* log */ }
-        })
+        GuideFlow.setUser("user-123")
+        lifecycleScope.launch { GuideFlow.refreshConfig() }
 
-        lifecycleScope.launch { GuideFlow.refreshConfig() }  // pull latest
+        setContent {
+            GuideFlowHost {
+                Column {
+                    Button(
+                        modifier = Modifier.guideFlowAnchor("budget_button"),
+                        onClick = {},
+                    ) { Text("Budget") }
 
-        setContent { GuideFlowHost { AppContent() } }        // host once near root
+                    Button(onClick = { GuideFlow.startFlow("budget_tutorial") }) {
+                        Text("Start tutorial")
+                    }
+                }
+            }
+        }
     }
 }
 ```
 
-### 3. Mark the elements a tutorial can point at
+---
+
+## 5. Author a tutorial in the portal
+
+1. **Sign in** with Google.
+2. **Create a project**, then copy the `gf_...` key into your app's `initialize(...)`. It is shown once. Projects can also be deleted from the projects list.
+3. **Create a flow** and give it a flow key such as `budget_tutorial`. From the flow list you can also **rename**, **duplicate**, or **delete** a flow. Duplicating opens a dialog to choose a new name and key, then copies the steps and both themes into a new draft (ideal for a translated or right-to-left variant).
+4. **Add steps.** For each step choose the type, set the anchor key (for tooltip and spotlight), and write a title and body. A live preview shows the step exactly as it will render in the flow's theme, and you can toggle light or dark. For a tooltip or spotlight you can turn on **advance when the user taps the element**.
+5. **Theme the flow** in the appearance editor: accent and button-text colour, card background, corner radius, dim, right-to-left, custom button labels, the step-counter format, and text size, each with a separate light and dark variant. There is also a **Show back button** toggle. The preview updates live.
+6. **Publish.** Publishing validates the flow (at least one step, unique order, an anchor for every tooltip and spotlight), compiles all published flows into one config, and bumps the project's version. The SDK downloads it on the next `refreshConfig()` or launch.
+
+7. **Read analytics** per flow: completion rate, started / completed / skipped / anchor-missing counts, and a per-step view chart labelled by step name.
+
+---
+
+## 6. Step types
 
 ```kotlin
-Button(modifier = Modifier.guideFlowAnchor("budget_button"), onClick = { }) {
-    Text("Budget")
+enum class StepType { TOOLTIP, SPOTLIGHT, MODAL }
+```
+
+| Type | Looks like | Anchor |
+|---|---|---|
+| `TOOLTIP` | A small card next to the element, with an accent ring around it. No screen dim. | Required |
+| `SPOTLIGHT` | Dims the screen and cuts a transparent hole over the element; the controls card floats next to it. | Required |
+| `MODAL` | A centered dialog, not attached to anything. | Not needed |
+
+**Advance on tap** (per step, tooltip or spotlight): the highlighted element stays interactive. One tap runs the element's own action (for example navigation) and advances the tour. That step shows no Next button. Everything else on screen is blocked so the user cannot wander off the tour. This is how a tour spans multiple screens: tapping the real button both navigates and moves the tour forward. If the target screen changes, hide the Back button for that flow, since Back moves the tour back but cannot navigate the app back.
+
+**Missing anchor**: if a tooltip or spotlight step points at an anchor that is not on screen, GuideFlow shows a modal fallback and fires `onAnchorMissing`. It never crashes.
+
+---
+
+## 7. Theming reference
+
+Each flow has two `FlowTheme` objects, `theme` (light) and `themeDark` (dark). The SDK applies the dark one when the device is in dark mode. Every field has a default, so older configs deserialize unchanged.
+
+| Field | Default | Effect |
+|---|---|---|
+| `accentColor` | SDK blue | Colour of the Next/Done button (`#RRGGBB`). |
+| `buttonTextColor` | white | Text/foreground on the accent button. |
+| `backgroundColor` | follows device | Card surface; leave unset to follow light/dark. |
+| `rtl` | `false` | Right-to-left layout for the overlay text. |
+| `dimOpacity` | `0.6` | Darkness of the spotlight/modal scrim (0 to 1). |
+| `cornerRadius` | `14` | Corner radius in dp for cards and the spotlight cutout. |
+| `titleSize` | `16` | Title text size in sp. The font follows the host app. |
+| `bodySize` | `14` | Body text size in sp. |
+| `nextLabel` / `backLabel` / `skipLabel` / `doneLabel` | Next / Back / Skip / Done | Button labels (translate these for other languages). |
+| `progressFormat` | `Step {current} of {total}` | Step counter text; `{current}` and `{total}` are substituted. |
+| `showProgress` | `true` | Show the step counter. |
+| `showSkip` | `true` | Show the Skip button (hidden on the last step). |
+| `showBack` | `true` | Show the Back button (turn off for flows that change screens). |
+
+The font is intentionally not themeable; overlay text uses the host app's own typography so tutorials feel native.
+
+---
+
+## 8. Behaviour you can rely on
+
+- **One request for config.** The SDK fetches a single document per project key and sends the current version so the backend can answer `304 Not Modified` when nothing changed.
+- **Offline.** With the cache on, the last good config is stored on device. A failed refresh keeps the previous config; a fresh install with no network simply shows nothing until it can fetch.
+- **Analytics never lose events on a bad network.** Events sit in a Room queue (capped at 1000, oldest dropped) and upload in the background; only server-acknowledged events are deleted.
+- **The SDK never crashes the host.** Invalid config is ignored, a missing anchor becomes a modal, an unknown step type is skipped, and every error is reported through `Result`, the listener, and (if enabled) Logcat.
+- **One flow at a time.** Starting a flow while another is active fails cleanly and is reported.
+- **Cross-screen flows.** A running flow survives your app's navigation, so a step can point at an element on a different screen (reached via advance-on-tap).
+
+---
+
+## 9. Public API reference
+
+```kotlin
+object GuideFlow {
+    const val SDK_VERSION: String
+
+    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig)
+    fun setUser(userId: String?)                   // hashed (SHA-256) before use
+    fun setListener(listener: GuideFlowListener?)
+    fun loadLocalFlows(flows: List<TutorialFlow>)  // local fallback, used per missing key
+    fun availableFlows(): List<TutorialFlow>       // published flows plus local fallbacks
+    suspend fun refreshConfig(): Result<Unit>      // fetch the latest published config
+    fun startFlow(flowKey: String): Result<Unit>
+    fun stopFlow(reason: StopReason = StopReason.MANUAL)
+    suspend fun flush(): Result<Int>               // upload queued analytics now
 }
+
+@Composable fun GuideFlowHost(modifier: Modifier = Modifier, content: @Composable () -> Unit)
+fun Modifier.guideFlowAnchor(key: String): Modifier
+
+interface GuideFlowListener {
+    fun onFlowStarted(flowKey: String) {}
+    fun onStepChanged(flowKey: String, stepIndex: Int) {}
+    fun onFlowCompleted(flowKey: String) {}
+    fun onFlowSkipped(flowKey: String) {}
+    fun onAnchorMissing(flowKey: String, anchorKey: String) {}
+    fun onError(error: GuideFlowError) {}
+}
+
+sealed class GuideFlowError { NotInitialized; FlowNotFound(flowKey); AnchorMissing(anchorKey); NetworkError(message); InvalidConfig(message) }
+enum class StopReason { MANUAL, COMPLETED, SKIPPED }
 ```
 
-The string must match the step's `anchorKey` set in the portal.
+`loadLocalFlows` is handy for tests and offline demos: remote flows win per key, and any key remote does not define falls back to a local one.
 
-### 4. Start a flow
+---
 
-```kotlin
-GuideFlow.startFlow("budget_tutorial")   // flowKey from the portal
-```
+## 10. Troubleshooting and FAQ
 
-The overlay renders over `GuideFlowHost`, and the user advances with Next, Back, Skip, and Done. Remote (published) flows win per key; any key that remote does not define falls back to a flow supplied via `loadLocalFlows(...)`. A flow keeps running across screen navigation, so a step can continue on the next page.
+**Do I need to run a server?**
+No. The backend is hosted on Cloud Run. Point `baseUrl` at it and you are done. You only run your own backend if you want to.
 
-The SDK never throws at the host app. Errors surface through the `Result` return, the listener (`onError`, `onAnchorMissing`), and, when `GuideFlowConfig(debugLogging = true)` is set, actionable Logcat messages under the tag `GuideFlow` (a wrong flow key prints the known keys; a missing anchor prints which `guideFlowAnchor(...)` to add). A missing anchor shows the modal fallback rather than failing.
+**How do I change a tutorial after release?**
+Edit it in the portal and press Publish. Apps pick it up on the next `refreshConfig()` or launch. No app store update.
 
-### Authoring a tutorial (portal)
+**My flow does not appear. What do I check?**
+1. Is the flow **Published** (not Draft)? 2. Does the `flowKey` in `startFlow` match exactly? 3. Has `refreshConfig()` finished at least once? 4. Is the `projectKey` correct? Turn on `debugLogging`; a wrong key prints the list of known flow keys.
 
-1. Open the portal app and sign in with Google.
-2. Create a project, then copy the `gf_...` key into your app's `initialize(...)` call. It is shown once.
-3. Add a flow and give it a flowKey such as `budget_tutorial`. From the flow list you can also rename, duplicate, or delete a flow; duplicating opens a dialog to choose the new display name and flow key, then copies the steps and both themes into a new draft (handy for a translated or right-to-left variant). Projects themselves can be created and deleted from the projects list.
-4. Add steps: pick the type, set the anchor key (for tooltip and spotlight), title, and body. A live preview shows the step exactly as it will render, including the flow's theme, and you can toggle light or dark. For a tooltip or spotlight you can turn on "advance when the user taps the element".
-5. Open the appearance editor to set the per-flow theme: colours, corner radius, dim, right-to-left layout, button labels (and a Show-back toggle for flows that change screens), step-counter format, and text size, each with a light and a dark variant. The font follows the host app.
-6. Publish. Publishing validates the flow (at least one step, unique order, anchors present for tooltip and spotlight), then the flow goes live and the SDK downloads it on the next `refreshConfig()` or app launch.
+**A step shows a centered modal instead of pointing at my element.**
+That is the missing-anchor fallback: the step's `anchorKey` did not match any `Modifier.guideFlowAnchor("...")` currently on screen. Check the spelling matches and that the element is composed on that screen. With `debugLogging` on, the log names the anchor to add.
 
-### Theming and advance-on-tap (how it works end to end)
+**What happens with no network?**
+With the cache enabled, the last downloaded config is used and tutorials still run. Analytics queue locally and upload when connectivity returns.
 
-The per-flow theme lives on the flow as two `FlowTheme` objects (`theme` and `themeDark`), serialized to JSON in Firestore and returned inside the published config. The SDK picks the dark variant when the device is in dark mode and applies it to every overlay; right-to-left affects only the text layout, while overlay placement stays in absolute coordinates.
+**Can I test without the backend?**
+Yes. Call `loadLocalFlows(listOf(...))` with hardcoded `TutorialFlow` objects and `startFlow` them. Any key not present remotely uses the local one.
 
-`advanceOnTap` is a per-step flag. When it is set, the overlay leaves the anchored element uncovered (blocking the rest of the screen with strips around it) so the element receives the real tap: its own `onClick` runs and the SDK advances the flow on the same gesture. If that step's anchor is missing, it falls back to a modal that still shows a Next button, so the user is never stuck.
+**How do I support dark mode / other languages / right-to-left?**
+Dark mode is automatic via the flow's `themeDark`. For other languages, translate the step text and the button labels, and set the counter format; for right-to-left, turn on `rtl`. Duplicate a flow to make a translated variant quickly.
+
+**How does a tour move between screens?**
+Use advance-on-tap on the real navigation control. Tapping it performs your navigation and advances the tour; the next step points at an element on the new screen.
+
+**How big is the footprint / what permissions?**
+The SDK adds the `INTERNET` permission only. It uses Compose, Ktor client, DataStore, Room, and WorkManager, which most modern apps already pull in.
+
+**Is analytics personal data?**
+No location, contacts, camera, screenshots, or input text is collected. Only a hashed user id and technical metadata (event type, timestamps, app/SDK/OS version, device model).
+
+---
+
+## 11. Privacy and security
+
+- SDK user ids are hashed (SHA-256) on device before storage or upload.
+- Project keys are stored only as a hash on the backend; the raw key is shown once at creation.
+- Portal requests are authenticated with a Firebase ID token, and every request checks that the caller owns the project.
+- The SDK and portal never talk to Firestore directly; everything goes through the backend.
+- No sensitive device data is collected (see the FAQ).
