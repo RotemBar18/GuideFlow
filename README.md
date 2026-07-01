@@ -4,7 +4,9 @@ A Kotlin and Jetpack Compose Android SDK for interactive in-app tutorials (toolt
 
 > Author a tour in the portal, press Publish, and live apps pick it up on the next launch. No app store update.
 
-**Jump to:** [Features](#features) · [Published config](#published-config-json) · [Database](#database-cloud-firestore) · [SDK API](#public-functions-sdk-api) · [Endpoints](#rest-endpoints) · [Architecture](#architecture-diagram) · [Quick start](#quick-start-use-the-sdk) · [Full docs](docs/documentation.md)
+[![JitPack](https://jitpack.io/v/RotemBar18/GuideFlow.svg)](https://jitpack.io/#RotemBar18/GuideFlow)
+
+**Jump to:** [Install](#install-jitpack) · [Features](#features) · [Published config](#published-config-json) · [Database](#database-cloud-firestore) · [SDK API](#public-functions-sdk-api) · [Endpoints](#rest-endpoints) · [Architecture](#architecture-diagram) · [Quick start](#quick-start-use-the-sdk) · [Docs site](https://rotembar18.github.io/GuideFlow/)
 
 ## Overview
 
@@ -312,6 +314,22 @@ erDiagram
         int skipped
         int anchorMissing
     }
+```
+
+## Install (JitPack)
+
+The SDK is published on JitPack. Add the repository, then the dependency:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories { maven("https://jitpack.io") }
+}
+
+// app/build.gradle.kts
+dependencies {
+    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.0.0")
+}
 ```
 
 ## Quick start (use the SDK)

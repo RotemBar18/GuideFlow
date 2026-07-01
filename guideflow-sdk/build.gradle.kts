@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.maven.publish)
 }
 
 android {
@@ -25,6 +26,26 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    // Expose a single publishable variant (with sources) for JitPack.
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
+
+// JitPack coordinate: com.github.RotemBar18.GuideFlow:guideflow-sdk:<tag>
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                groupId = "com.github.RotemBar18.GuideFlow"
+                artifactId = "guideflow-sdk"
+                version = "1.0.0"
+                from(components["release"])
+            }
+        }
     }
 }
 

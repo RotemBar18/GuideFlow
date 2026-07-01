@@ -1,0 +1,4 @@
+jdk:
+  - openjdk17
+install:
+  - ./gradlew :shared:publishToMavenLocal :guideflow-sdk:publishToMavenLocal
