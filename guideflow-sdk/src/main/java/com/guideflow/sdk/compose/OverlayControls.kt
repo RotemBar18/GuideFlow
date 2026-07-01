@@ -64,7 +64,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                 TextButton(
                     onClick = { coordinator.skip() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.SKIP),
-                ) { Text(theme.skipLabel) }
+                ) { Text(theme.skipLabel, color = textColor) }
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -86,7 +86,7 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                 TextButton(
                     onClick = { coordinator.back() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.BACK),
-                ) { Text(theme.backLabel) }
+                ) { Text(theme.backLabel, color = textColor) }
             }
             Spacer(Modifier.weight(1f))
             // Advance-on-tap steps have no Next button; the user taps the element instead.
