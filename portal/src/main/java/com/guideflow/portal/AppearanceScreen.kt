@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -26,6 +27,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,7 +71,15 @@ fun AppearanceScreen(
     var dark by remember { mutableStateOf(flow.themeDark) }
     var editingDark by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+
+    // The flow passed via navigation can be stale after a save; load the latest so the
+    // editor and preview reflect what is actually stored.
+    LaunchedEffect(flow.id) {
+        runCatching { api.getFlow(flow.id, getToken()) }.onSuccess { light = it.theme; dark = it.themeDark }
+        loading = false
+    }
 
     val cur = if (editingDark) dark else light
     fun set(t: FlowTheme) { if (editingDark) dark = t else light = t }
@@ -99,7 +109,15 @@ fun AppearanceScreen(
                     enabled = !saving,
                     modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
-                ) { Text("Save light + dark", fontWeight = FontWeight.SemiBold) }
+                ) {
+                    if (saving) {
+                        CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        Spacer(Modifier.size(10.dp))
+                        Text("Saving...", fontWeight = FontWeight.SemiBold)
+                    } else {
+                        Text("Save light + dark", fontWeight = FontWeight.SemiBold)
+                    }
+                }
                 Text(
                     "Saving moves the flow to Draft. Republish to push the new look.",
                     color = Gf.textFaint, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp),
@@ -107,6 +125,12 @@ fun AppearanceScreen(
             }
         },
     ) { padding ->
+        if (loading) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Gf.primary)
+            }
+            return@Scaffold
+        }
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Pinned: variant switcher + live preview (stays visible while you scroll).
             Column(
