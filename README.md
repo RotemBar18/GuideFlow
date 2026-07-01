@@ -4,7 +4,7 @@ A Kotlin and Jetpack Compose Android SDK for interactive in-app tutorials (toolt
 
 > Author a tour in the portal, press Publish, and live apps pick it up on the next launch. No app store update.
 
-[![JitPack](https://jitpack.io/v/RotemBar18/GuideFlow.svg)](https://jitpack.io/#RotemBar18/GuideFlow)
+[![JitPack](https://jitpack.io/v/RotemBar18/GuideFlow.svg)](https://jitpack.io/#RotemBar18/GuideFlow) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Kotlin](https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white) ![Android](https://img.shields.io/badge/Android-min%20SDK%2026-3DDC84?logo=android&logoColor=white) ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-UI-4285F4?logo=jetpackcompose&logoColor=white) ![Backend](https://img.shields.io/badge/Backend-Ktor%20on%20Cloud%20Run-087CFA)
 
 **Jump to:** [Install](#install-jitpack) · [Features](#features) · [Published config](#published-config-json) · [Database](#database-cloud-firestore) · [SDK API](#public-functions-sdk-api) · [Endpoints](#rest-endpoints) · [Architecture](#architecture-diagram) · [Quick start](#quick-start-use-the-sdk) · [Docs site](https://rotembar18.github.io/GuideFlow/)
 
@@ -15,7 +15,7 @@ GuideFlow is an ecosystem of five modules:
 | Module | What it is | Tech |
 |---|---|---|
 | `guideflow-sdk` | The reusable Android library that renders tutorials | Kotlin, Jetpack Compose, Ktor Client, DataStore |
-| `app` | A demo host app that embeds the SDK | Jetpack Compose |
+| `app` | Pulse, a demo music-player app that consumes the SDK | Jetpack Compose |
 | `portal` | The authoring app (sign in, build and publish tutorials) | Jetpack Compose, Firebase Auth (Google) |
 | `backend` | REST API that stores tutorials and serves config | Ktor Server, Firebase Admin, Firestore |
 | `shared` | Serializable DTOs shared by all of the above | Kotlin/JVM, kotlinx.serialization |
@@ -28,6 +28,7 @@ The backend is deployed on Google Cloud Run and works from any network:
 - Three overlay types: tooltip (a bubble on an element), spotlight (dim plus cut-out), and modal (a centered dialog).
 - Multi-step flows with Next, Back, Skip, and Done. Steps can span multiple screens: a flow keeps running as the host app navigates.
 - An anchor system: tag any composable with `Modifier.guideFlowAnchor("key")` and steps target it by key.
+- Minimal integration: four calls (`initialize`, `GuideFlowHost`, `guideFlowAnchor`, `startFlow`), or zero-code startup by declaring the project key in the manifest (auto-init via App Startup).
 - Advance-on-tap steps: the highlighted element stays interactive, so tapping it both runs the app's own action (for example navigation) and advances the tour. That step shows no Next button. While a step is active the rest of the screen is blocked, so the user cannot wander off the tour.
 - The Back button can be turned off per flow, which suits flows that change screens (Back moves the tour back but cannot navigate the host app back).
 - Missing-anchor fallback: a tooltip or spotlight whose anchor is not on screen falls back to a modal and emits an anchor-missing callback. The SDK does not crash the host app.
