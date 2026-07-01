@@ -78,69 +78,51 @@ The key idea: the app always fetches **one** config document for its project key
 
 ## 4. Integrate the SDK, step by step
 
-### The whole integration (4 lines)
+### The whole integration
 
-A complete setup is four calls. `baseUrl` defaults to the hosted backend, and `initialize` refreshes config in the background, so nothing else is required.
+Three steps: add the dependency, put your project key in the manifest (the SDK auto-initializes at startup), then host the overlay and start a flow.
 
 ```kotlin
-GuideFlow.initialize(this, "gf_your_key")                     // 1. once at startup
-
-setContent {
-    GuideFlowHost {                                            // 2. once at the root
-        Button(Modifier.guideFlowAnchor("budget_button")) {   // 3. tag anything a step points at
-            Text("Budget")
-        }
-    }
-}
-
-GuideFlow.startFlow("budget_tutorial")                         // 4. run a published tutorial
+// 1. app/build.gradle.kts  — depend on the published SDK (JitPack)
+dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.1.0") }
 ```
 
-Everything below explains these four, plus the optional extras (`setUser`, `setListener`, manual `refreshConfig`, `flush`). You can skip the optional ones entirely.
-
-### Step 1: Add the library
-
-In this repository the app depends on the module directly:
+```xml
+<!-- 2. AndroidManifest.xml, inside <application> — the SDK inits itself, no code call -->
+<meta-data android:name="com.guideflow.PROJECT_KEY" android:value="gf_your_key" />
+```
 
 ```kotlin
+// 3. host the overlay, tag targets, start a flow
+setContent {
+    GuideFlowHost {
+        Button(Modifier.guideFlowAnchor("budget_button")) { Text("Budget") }
+    }
+}
+GuideFlow.startFlow("budget_tutorial")
+```
+
+Everything below explains these, plus the optional extras (`setUser`, `setListener`, `flush`). You can skip the optional ones entirely.
+
+### Step 1: Add the library (JitPack)
+
+The SDK is published on JitPack. Add the repository, then the dependency:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories { maven("https://jitpack.io") }
+}
+
 // app/build.gradle.kts
-dependencies { implementation(project(":guideflow-sdk")) }
+dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.1.0") }
 ```
 
 The SDK declares the `INTERNET` permission itself; it merges into your app. No other manifest change is needed for an HTTPS backend.
 
-### Step 2: Initialize once at startup
+### Step 2: Set your project key in the manifest (auto-init)
 
-Call this before you show any tutorial, typically in your `Activity.onCreate` or `Application`. The project key is all you need:
-
-```kotlin
-GuideFlow.initialize(context = this, projectKey = "gf_your_key")
-```
-
-Pass a `GuideFlowConfig` only if you want to change a default:
-
-```kotlin
-GuideFlow.initialize(
-    context = this,
-    projectKey = "gf_your_key",
-    config = GuideFlowConfig(debugLogging = true),
-)
-```
-
-`GuideFlowConfig` options:
-
-| Field | Default | What it does |
-|---|---|---|
-| `baseUrl` | hosted backend | Backend URL. Already set to the hosted backend; override only to run your own. On a physical device do not use `localhost`; use your machine's LAN IP if you self-host. |
-| `enableAnalytics` | `true` | Collect and upload flow/step events. Set `false` to turn analytics off entirely. |
-| `enableOfflineCache` | `true` | Persist the last good config to DataStore so tutorials work offline and start instantly. |
-| `debugLogging` | `false` | Log actionable messages to Logcat under the tag `GuideFlow` (wrong flow key prints the known keys; a missing anchor prints which anchor to add). Keep off in release. |
-
-`initialize` loads any cached config immediately, then refreshes from the backend in the background (keeping the cache if the refresh fails), so you do not need to call `refreshConfig()` yourself for the normal case.
-
-#### Auto-init (skip the initialize call)
-
-If you would rather not call `initialize` in code, declare the project key in your app's `AndroidManifest.xml` and the SDK initializes itself at startup (via AndroidX App Startup):
+The SDK initializes itself at startup (via AndroidX App Startup) from manifest meta-data, so there is no `initialize()` call to write:
 
 ```xml
 <application>
@@ -151,7 +133,13 @@ If you would rather not call `initialize` in code, declare the project key in yo
 </application>
 ```
 
-With this in place you do not call `initialize` at all. If no `PROJECT_KEY` meta-data is present, auto-init does nothing, so calling `initialize` manually keeps working. `setUser`, `setListener`, `startFlow`, and the anchors are the same either way.
+| Meta-data | Default | What it does |
+|---|---|---|
+| `com.guideflow.PROJECT_KEY` | (required) | Your project's `gf_...` key from the portal. Selects which published config to download. |
+| `com.guideflow.BASE_URL` | hosted backend | Backend URL. Already set to the hosted backend; override only to run your own. On a physical device do not use `localhost`; use your machine's LAN IP if you self-host. |
+| `com.guideflow.DEBUG_LOGGING` | `false` | Log actionable messages to Logcat under the tag `GuideFlow` (a wrong flow key prints the known keys; a missing anchor prints which anchor to add). Keep off in release. |
+
+On startup the SDK loads any cached config immediately, then refreshes from the backend in the background (keeping the cache if the refresh fails). Analytics and the offline cache are on by default.
 
 ### Step 3: Identify the user (optional)
 
@@ -217,7 +205,7 @@ Every callback has a default empty body, so override only what you need. Errors 
 
 ### Step 8: Analytics (automatic, with an optional manual flush)
 
-When `enableAnalytics` is on, the SDK records flow and step events into a local Room queue and uploads them in the background with WorkManager, deleting only the events the server acknowledges. You usually do nothing. To push immediately:
+Analytics is on by default: the SDK records flow and step events into a local Room queue and uploads them in the background with WorkManager, deleting only the events the server acknowledges. You usually do nothing. To push immediately:
 
 ```kotlin
 val accepted: Result<Int> = GuideFlow.flush()
@@ -229,11 +217,9 @@ val accepted: Result<Int> = GuideFlow.flush()
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // No initialize() call: the SDK auto-inits from com.guideflow.PROJECT_KEY in the manifest.
 
-        // Required. baseUrl defaults to the hosted backend; config is optional.
-        GuideFlow.initialize(this, "gf_your_key", GuideFlowConfig(debugLogging = true))
-
-        // Optional: associate a user, and listen to lifecycle/errors.
+        // Optional: associate a user for tutorial state and analytics.
         GuideFlow.setUser("user-123")
 
         setContent {
@@ -259,7 +245,7 @@ class MainActivity : ComponentActivity() {
 ## 5. Author a tutorial in the portal
 
 1. **Sign in** with Google.
-2. **Create a project**, then copy the `gf_...` key into your app's `initialize(...)`. It is shown once. Projects can also be deleted from the projects list.
+2. **Create a project**, then copy the `gf_...` key into your app's manifest (the `com.guideflow.PROJECT_KEY` meta-data). It is shown once. Projects can also be deleted from the projects list.
 3. **Create a flow** and give it a flow key such as `budget_tutorial`. From the flow list you can also **rename**, **duplicate**, or **delete** a flow. Duplicating opens a dialog to choose a new name and key, then copies the steps and both themes into a new draft (ideal for a translated or right-to-left variant).
 4. **Add steps.** For each step choose the type, set the anchor key (for tooltip and spotlight), and write a title and body. A live preview shows the step exactly as it will render in the flow's theme, and you can toggle light or dark. For a tooltip or spotlight you can turn on **advance when the user taps the element**.
 5. **Theme the flow** in the appearance editor: accent and button-text colour, card background, corner radius, dim, right-to-left, custom button labels, the step-counter format, and text size, each with a separate light and dark variant. There is also a **Show back button** toggle. The preview updates live.
@@ -328,7 +314,7 @@ The font is intentionally not themeable; overlay text uses the host app's own ty
 object GuideFlow {
     const val SDK_VERSION: String
 
-    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig = GuideFlowConfig())
+    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig = GuideFlowConfig())  // called for you by auto-init
     fun setUser(userId: String?)                   // hashed (SHA-256) before use
     fun setListener(listener: GuideFlowListener?)
     fun loadLocalFlows(flows: List<TutorialFlow>)  // local fallback, used per missing key

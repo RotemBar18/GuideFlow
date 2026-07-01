@@ -6,7 +6,7 @@ A Kotlin and Jetpack Compose Android SDK for interactive in-app tutorials (toolt
 
 [![JitPack](https://jitpack.io/v/RotemBar18/GuideFlow.svg)](https://jitpack.io/#RotemBar18/GuideFlow) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Kotlin](https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white) ![Android](https://img.shields.io/badge/Android-min%20SDK%2026-3DDC84?logo=android&logoColor=white) ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-UI-4285F4?logo=jetpackcompose&logoColor=white) ![Backend](https://img.shields.io/badge/Backend-Ktor%20on%20Cloud%20Run-087CFA)
 
-**Jump to:** [Install](#install-jitpack) · [Features](#features) · [Published config](#published-config-json) · [Database](#database-cloud-firestore) · [SDK API](#public-functions-sdk-api) · [Endpoints](#rest-endpoints) · [Architecture](#architecture-diagram) · [Quick start](#quick-start-use-the-sdk) · [Docs site](https://rotembar18.github.io/GuideFlow/)
+**Jump to:** [Quick start](#quick-start) · [Features](#features) · [Published config](#published-config-json) · [Database](#database-cloud-firestore) · [SDK API](#public-functions-sdk-api) · [Endpoints](#rest-endpoints) · [Architecture](#architecture-diagram) · [Docs site](https://rotembar18.github.io/GuideFlow/)
 
 ## Overview
 
@@ -136,7 +136,7 @@ Project keys are never stored raw. Only `projectKeyHash` (SHA-256) is stored; th
 object GuideFlow {
     const val SDK_VERSION: String
 
-    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig = GuideFlowConfig())
+    fun initialize(context: Context, projectKey: String, config: GuideFlowConfig = GuideFlowConfig())  // called for you by auto-init
     fun setUser(userId: String?)                  // hashed (SHA-256) before use
     fun setListener(listener: GuideFlowListener?)
     suspend fun refreshConfig(): Result<Unit>     // fetch latest published config
@@ -183,7 +183,7 @@ The SDK never throws at the host app. A developer learns what went wrong through
 
 - **Return value**: `startFlow` and `refreshConfig` return a `Result`; a wrong flow key gives `Result.failure(FlowNotFound)`.
 - **Listener**: `GuideFlowListener.onError(...)` receives typed errors (`FlowNotFound`, `InvalidConfig`, `NetworkError`, `NotInitialized`), and `onAnchorMissing(flowKey, anchorKey)` fires when a step's anchor is not on screen (the overlay then shows the modal fallback instead of failing).
-- **Logcat**: set `GuideFlowConfig(debugLogging = true)` and the SDK logs actionable messages under the tag `GuideFlow`, for example a wrong flow key prints the known keys, and a missing anchor prints which `guideFlowAnchor(...)` to add. Logging is off by default, so release builds stay quiet.
+- **Logcat**: add `<meta-data android:name="com.guideflow.DEBUG_LOGGING" android:value="true" />` to the manifest and the SDK logs actionable messages under the tag `GuideFlow`, for example a wrong flow key prints the known keys, and a missing anchor prints which `guideFlowAnchor(...)` to add. Logging is off by default, so release builds stay quiet.
 
 ## Inner functions and backend endpoints
 
@@ -317,9 +317,11 @@ erDiagram
     }
 ```
 
-## Install (JitPack)
+## Quick start
 
-The SDK is published on JitPack. Add the repository, then the dependency:
+The backend is already hosted on Cloud Run, so adopting the SDK needs no server setup. Three steps:
+
+**1. Add the dependency (JitPack).**
 
 ```kotlin
 // settings.gradle.kts
@@ -333,23 +335,26 @@ dependencies {
 }
 ```
 
-## Quick start (use the SDK)
+**2. Declare your project key in the manifest (auto-init).** The SDK initializes itself at startup, so there is no `initialize()` call to write.
 
-The backend is already hosted on Cloud Run, so adopting the SDK needs no server setup. The whole integration is four calls (`baseUrl` defaults to the hosted backend, and `initialize` refreshes config in the background):
+```xml
+<!-- AndroidManifest.xml, inside <application> -->
+<meta-data android:name="com.guideflow.PROJECT_KEY" android:value="gf_your_key" />
+```
+
+**3. Host the overlay, tag your elements, and start a flow.**
 
 ```kotlin
-GuideFlow.initialize(this, "gf_your_key")             // 1. once at startup
-
 setContent {
-    GuideFlowHost {                                     // 2. once at the root
-        Button(Modifier.guideFlowAnchor("budget_button")) { Text("Budget") }   // 3. tag targets
+    GuideFlowHost {                                                    // once, at the root
+        Button(Modifier.guideFlowAnchor("budget_button")) { Text("Budget") }  // tag targets
     }
 }
 
-GuideFlow.startFlow("budget_tutorial")                 // 4. run a published tutorial
+GuideFlow.startFlow("budget_tutorial")                                 // run a published tutorial
 ```
 
-`setUser`, `setListener`, `refreshConfig`, and `flush` are all optional. Open the **portal app**, sign in, create a project, author a flow, and publish; the host app picks it up on its next launch. See the [full guide](docs/documentation.md).
+Open the **portal app**, sign in, create a project (copy its key into the manifest above), author a flow, and publish; the host app picks it up on its next launch. See the [full guide](docs/documentation.md).
 
 ## Tech stack
 

@@ -23,16 +23,21 @@ dependencies {
 
 ## The whole integration
 
-```kotlin
-GuideFlow.initialize(this, "gf_your_key")            // 1. once at startup
+Add the JitPack dependency above, then declare your project key in the manifest (the SDK auto-initializes at startup — no `initialize()` call):
 
+```xml
+<!-- AndroidManifest.xml, inside <application> -->
+<meta-data android:name="com.guideflow.PROJECT_KEY" android:value="gf_your_key" />
+```
+
+```kotlin
 setContent {
-    GuideFlowHost {                                   // 2. once at the root
-        Button(Modifier.guideFlowAnchor("budget")) { Text("Budget") }   // 3. tag targets
+    GuideFlowHost {                                                     // once, at the root
+        Button(Modifier.guideFlowAnchor("budget")) { Text("Budget") }  // tag targets
     }
 }
 
-GuideFlow.startFlow("budget_tutorial")               // 4. run a published tutorial
+GuideFlow.startFlow("budget_tutorial")                                  // run a published tutorial
 ```
 
 See the [full guide](documentation.md) for everything else.
