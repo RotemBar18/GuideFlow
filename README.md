@@ -28,7 +28,7 @@ The backend is deployed on Google Cloud Run and works from any network:
 - Three overlay types: tooltip (a bubble on an element), spotlight (dim plus cut-out), and modal (a centered dialog).
 - Multi-step flows with Next, Back, Skip, and Done. Steps can span multiple screens: a flow keeps running as the host app navigates.
 - An anchor system: tag any composable with `Modifier.guideFlowAnchor("key")` and steps target it by key.
-- Minimal integration: four calls (`initialize`, `GuideFlowHost`, `guideFlowAnchor`, `startFlow`), or zero-code startup by declaring the project key in the manifest (auto-init via App Startup).
+- Minimal integration: declare the project key in the manifest (auto-init via App Startup), then `GuideFlowHost`, `guideFlowAnchor`, and `startFlow`. No `initialize()` call to write.
 - Advance-on-tap steps: the highlighted element stays interactive, so tapping it both runs the app's own action (for example navigation) and advances the tour. That step shows no Next button. While a step is active the rest of the screen is blocked, so the user cannot wander off the tour.
 - The Back button can be turned off per flow, which suits flows that change screens (Back moves the tour back but cannot navigate the host app back).
 - Missing-anchor fallback: a tooltip or spotlight whose anchor is not on screen falls back to a modal and emits an anchor-missing callback. The SDK does not crash the host app.
@@ -331,7 +331,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.1.0")
+    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.2.0")
 }
 ```
 
