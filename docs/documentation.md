@@ -138,6 +138,21 @@ GuideFlow.initialize(
 
 `initialize` loads any cached config immediately, then refreshes from the backend in the background (keeping the cache if the refresh fails), so you do not need to call `refreshConfig()` yourself for the normal case.
 
+#### Auto-init (skip the initialize call)
+
+If you would rather not call `initialize` in code, declare the project key in your app's `AndroidManifest.xml` and the SDK initializes itself at startup (via AndroidX App Startup):
+
+```xml
+<application>
+    <meta-data android:name="com.guideflow.PROJECT_KEY"   android:value="gf_your_key" />
+    <!-- optional -->
+    <meta-data android:name="com.guideflow.BASE_URL"      android:value="https://your.backend" />
+    <meta-data android:name="com.guideflow.DEBUG_LOGGING" android:value="true" />
+</application>
+```
+
+With this in place you do not call `initialize` at all. If no `PROJECT_KEY` meta-data is present, auto-init does nothing, so calling `initialize` manually keeps working. `setUser`, `setListener`, `startFlow`, and the anchors are the same either way.
+
 ### Step 3: Identify the user (optional)
 
 ```kotlin

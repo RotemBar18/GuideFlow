@@ -51,6 +51,9 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Optional auto-init: read the project key from the manifest at app startup.
+    implementation(libs.androidx.startup.runtime)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
