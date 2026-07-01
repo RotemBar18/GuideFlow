@@ -193,4 +193,61 @@ class SeedTapFlowTest {
 
         println("[SEED] created+published portal_tour flowId=${flow.flowId} $keyLine")
     }
+
+    /** Seeds the Pulse music-player demo project + its onboarding tour, themed to match the app. */
+    @Test
+    fun seedPulseTour() {
+        val auth = FirebaseAuthProvider.initIfConfigured()
+        assumeNotNull(auth)
+
+        val email = System.getProperty("seedEmail") ?: "rotem68907@gmail.com"
+        val uid = FirebaseAuth.getInstance().getUserByEmail(email).uid
+
+        val store = FirestoreStore()
+        val name = "Pulse Demo"
+        val existing = store.listProjects(uid).firstOrNull { it.name == name }
+        val projectId: String
+        val keyLine: String
+        if (existing != null) {
+            projectId = existing.projectId
+            keyLine = "projectId=$projectId key=(unchanged; shown only at creation)"
+        } else {
+            val (rec, rawKey) = store.createProject(uid, name)
+            projectId = rec.projectId
+            keyLine = "projectId=$projectId key=$rawKey"
+        }
+        java.io.File(System.getProperty("user.dir"), "pulse_seed.txt").writeText(keyLine)
+
+        store.listFlows(projectId).firstOrNull { it.flowKey == "pulse_onboarding" }?.let { store.deleteFlow(it.flowId) }
+
+        val flow = store.createFlow(projectId, "pulse_onboarding", "Pulse onboarding")
+        // Dark, pink-accented theme to match the Pulse UI; Back hidden (the tour changes screens).
+        val theme = FlowTheme(
+            accentColor = "#EC4899",
+            buttonTextColor = "#FFFFFF",
+            backgroundColor = "#211C2E",
+            cornerRadius = 18,
+            dimOpacity = 0.72f,
+            showBack = false,
+        )
+        store.updateFlow(flow.flowId, flowKey = null, name = null, theme = theme, themeDark = theme)
+
+        val steps = listOf(
+            Triple(StepType.MODAL, null as String?, Triple("Welcome to Pulse", "A 30-second tour of your new music player.", false)),
+            Triple(StepType.SPOTLIGHT, "pulse_featured", Triple("Made for you", "Featured mixes, hand-picked for your mood.", false)),
+            Triple(StepType.TOOLTIP, "pulse_playlist", Triple("Open a playlist", "Tap a playlist to start listening.", true)),
+            Triple(StepType.SPOTLIGHT, "pulse_play", Triple("Play and pause", "Your main control lives right here.", false)),
+            Triple(StepType.TOOLTIP, "pulse_like", Triple("Save favourites", "Tap the heart to keep a track.", false)),
+            Triple(StepType.TOOLTIP, "pulse_queue", Triple("Up next", "Peek at and reorder what's coming up.", false)),
+            Triple(StepType.TOOLTIP, "pulse_back", Triple("Back to your library", "Tap back to browse more.", true)),
+            Triple(StepType.MODAL, null, Triple("Enjoy Pulse", "That's it. Press play and enjoy the music.", false)),
+        )
+        steps.forEach { (type, anchor, content) ->
+            val (title, body, advance) = content
+            store.addStep(flow.flowId, CreateStepRequest(type = type, anchorKey = anchor, title = title, body = body, advanceOnTap = advance))
+        }
+        store.publishFlow(flow.flowId)
+
+        println("[SEED] created+published pulse_onboarding flowId=${flow.flowId} $keyLine")
+    }
 }
