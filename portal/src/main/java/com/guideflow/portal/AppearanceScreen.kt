@@ -2,6 +2,7 @@ package com.guideflow.portal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,7 +70,9 @@ fun AppearanceScreen(
     val scope = rememberCoroutineScope()
     var light by remember { mutableStateOf(flow.theme) }
     var dark by remember { mutableStateOf(flow.themeDark) }
-    var editingDark by remember { mutableStateOf(false) }
+    // Start on the variant the device is using, so the preview matches what the SDK shows.
+    val systemDark = isSystemInDarkTheme()
+    var editingDark by remember { mutableStateOf(systemDark) }
     var saving by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
