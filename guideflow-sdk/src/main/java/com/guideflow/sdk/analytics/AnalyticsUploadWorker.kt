@@ -22,6 +22,8 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 private const val BATCH_SIZE = 100
@@ -30,12 +32,16 @@ private const val KEY_BASE_URL = "baseUrl"
 private const val KEY_PROJECT_KEY = "projectKey"
 private val json = Json { ignoreUnknownKeys = true }
 
+// Serializes uploads so the immediate terminal-event flush and the WorkManager worker
+// never drain the queue concurrently (which would POST overlapping batches).
+private val uploadMutex = Mutex()
+
 /**
  * Drains the local event queue to the backend. Deletes only the events the server
  * acknowledges, so a failed upload keeps them for the next run (CLAUDE.md rule).
  * Shared by [AnalyticsUploadWorker] and `GuideFlow.flush()`.
  */
-internal suspend fun uploadPending(context: Context, baseUrl: String, projectKey: String): Int {
+internal suspend fun uploadPending(context: Context, baseUrl: String, projectKey: String): Int = uploadMutex.withLock {
     val dao = EventDatabase.get(context).events()
     val client = HttpClient(OkHttp) {
         expectSuccess = true
@@ -60,7 +66,7 @@ internal suspend fun uploadPending(context: Context, baseUrl: String, projectKey
     } finally {
         client.close()
     }
-    return uploaded
+    uploaded
 }
 
 internal class AnalyticsUploadWorker(

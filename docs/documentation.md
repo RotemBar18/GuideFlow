@@ -84,7 +84,7 @@ Three steps: add the dependency, put your project key in the manifest (the SDK a
 
 ```kotlin
 // 1. app/build.gradle.kts  — depend on the published SDK (JitPack)
-dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.2.0") }
+dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.3.0") }
 ```
 
 ```xml
@@ -115,7 +115,7 @@ dependencyResolutionManagement {
 }
 
 // app/build.gradle.kts
-dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.2.0") }
+dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.3.0") }
 ```
 
 The SDK declares the `INTERNET` permission itself; it merges into your app. No other manifest change is needed for an HTTPS backend.

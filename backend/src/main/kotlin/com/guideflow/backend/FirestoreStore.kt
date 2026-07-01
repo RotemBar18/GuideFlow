@@ -233,9 +233,16 @@ class FirestoreStore(
     override fun recordEvents(projectId: String, events: List<AnalyticsEvent>): List<String> {
         for (e in events) {
             val ref = this.events.document(e.eventId)
-            if (ref.get().get().exists()) continue // idempotent: counted already
-            // ponytail: 1 read + 2 writes per event; fine for MVP volume, batch a write if it grows.
-            ref.set(eventToMap(projectId, e)).get()
+            // Atomic idempotency: create() fails with ALREADY_EXISTS if this eventId was
+            // already recorded, so concurrent uploads of the same event increment exactly once.
+            // (A prior get()-then-set() was a check-then-act race that could double-count.)
+            val created = try {
+                ref.create(eventToMap(projectId, e)).get()
+                true
+            } catch (ex: java.util.concurrent.ExecutionException) {
+                if ((ex.cause?.message ?: "").contains("ALREADY_EXISTS")) false else throw ex
+            }
+            if (!created) continue
             val incr = summaryIncrement(e)
             if (incr.isNotEmpty()) {
                 summaries.document(e.flowId).set(mapOf("flowId" to e.flowId) + incr, SetOptions.merge()).get()
