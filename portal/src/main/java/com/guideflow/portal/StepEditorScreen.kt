@@ -351,9 +351,7 @@ private fun PreviewCard(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             if (theme.showBack && !isFirst) Text(theme.backLabel, color = textColor.copy(alpha = 0.7f), fontSize = 11.sp)
             Spacer(Modifier.weight(1f))
-            if (advanceByTap) {
-                Text("👆", fontSize = 15.sp)
-            } else {
+            if (!advanceByTap) {
                 Box(Modifier.clip(RoundedCornerShape(8.dp)).background(accent).padding(horizontal = 16.dp, vertical = 6.dp)) {
                     Text(nextLabel, color = buttonText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 }

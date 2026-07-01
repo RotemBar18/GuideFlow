@@ -85,10 +85,8 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
                 ) { Text(theme.backLabel) }
             }
             Spacer(Modifier.weight(1f))
-            if (advanceByTap) {
-                // No Next button: the user advances by tapping the highlighted element.
-                Text("👆", style = MaterialTheme.typography.titleMedium)
-            } else {
+            // Advance-on-tap steps have no Next button; the user taps the element instead.
+            if (!advanceByTap) {
                 Button(
                     onClick = { coordinator.next() },
                     modifier = Modifier.testTag(GuideFlowOverlayTags.NEXT),
