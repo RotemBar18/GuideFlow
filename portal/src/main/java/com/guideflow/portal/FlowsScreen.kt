@@ -243,21 +243,9 @@ private fun FlowCard(flow: TutorialFlow, isFirst: Boolean = false, onClick: () -
                         expanded = menu, onDismissRequest = { menu = false },
                         modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("Rename", color = Gf.ink) },
-                            leadingIcon = { Text("✎", fontSize = 16.sp) },
-                            onClick = { menu = false; onRename() },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Duplicate", color = Gf.ink) },
-                            leadingIcon = { Text("⧉", fontSize = 16.sp) },
-                            onClick = { menu = false; onDuplicate() },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Delete", color = Gf.errorFg) },
-                            leadingIcon = { Text("🗑", fontSize = 15.sp) },
-                            onClick = { menu = false; onDelete() },
-                        )
+                        DropdownMenuItem(text = { Text("Rename", color = Gf.ink) }, onClick = { menu = false; onRename() })
+                        DropdownMenuItem(text = { Text("Duplicate", color = Gf.ink) }, onClick = { menu = false; onDuplicate() })
+                        DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
                     }
                 }
             }

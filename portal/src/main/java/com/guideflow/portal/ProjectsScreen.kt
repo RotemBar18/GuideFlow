@@ -100,16 +100,8 @@ fun ProjectsScreen(
                             expanded = menuOpen, onDismissRequest = { menuOpen = false },
                             modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
                         ) {
-                            DropdownMenuItem(
-                                text = { Text("Take a tour", color = Gf.ink) },
-                                leadingIcon = { Text("✨", fontSize = 15.sp) },
-                                onClick = { menuOpen = false; onStartTour() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Sign out", color = Gf.ink) },
-                                leadingIcon = { Text("⎋", fontSize = 16.sp) },
-                                onClick = { menuOpen = false; onSignOut() },
-                            )
+                            DropdownMenuItem(text = { Text("Take a tour", color = Gf.ink) }, onClick = { menuOpen = false; onStartTour() })
+                            DropdownMenuItem(text = { Text("Sign out", color = Gf.ink) }, onClick = { menuOpen = false; onSignOut() })
                         }
                     }
                 }
@@ -218,11 +210,7 @@ private fun ProjectCard(project: ProjectDto, modifier: Modifier = Modifier, onCl
                         expanded = menu, onDismissRequest = { menu = false },
                         modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("Delete", color = Gf.errorFg) },
-                            leadingIcon = { Text("🗑", fontSize = 15.sp) },
-                            onClick = { menu = false; onDelete() },
-                        )
+                        DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
                     }
                 }
                 Text("›", color = Gf.textFaint, fontSize = 18.sp)
