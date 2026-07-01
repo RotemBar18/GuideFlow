@@ -1,6 +1,7 @@
 package com.guideflow.backend
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.cloud.FirestoreClient
 import com.guideflow.backend.auth.FirebaseAuthProvider
 import com.guideflow.shared.CreateStepRequest
 import com.guideflow.shared.FlowTheme
@@ -18,6 +19,20 @@ import org.junit.Test
  *   ./gradlew :backend:test -PbackendOnly --no-daemon --tests "com.guideflow.backend.SeedTapFlowTest"
  */
 class SeedTapFlowTest {
+
+    /** One-off: zero the analytics summary for the portal_tour flow (deletes the summary doc). */
+    @Test
+    fun resetPortalTourSummary() {
+        val auth = FirebaseAuthProvider.initIfConfigured()
+        assumeNotNull(auth) // no creds -> skip
+        val db = FirestoreClient.getFirestore()
+        val flows = db.collection("flows").whereEqualTo("flowKey", "portal_tour").get().get()
+        if (flows.isEmpty) { println("[RESET] no portal_tour flow found"); return }
+        for (f in flows.documents) {
+            db.collection("analyticsSummaries").document(f.id).delete().get()
+            println("[RESET] cleared summary for portal_tour flowId=${f.id}")
+        }
+    }
 
     @Test
     fun seedTapToAdvanceFlow() {
