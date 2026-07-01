@@ -24,3 +24,6 @@ internal fun FlowTheme.buttonTextColorOrDefault(): Color = buttonTextColor?.toCo
 
 /** Custom card background, or null to follow the host light/dark theme. */
 internal fun FlowTheme.backgroundColorOrNull(): Color? = backgroundColor?.toColorOrNull()
+
+/** Custom title/body text colour, or null to follow the host/card default. */
+internal fun FlowTheme.textColorOrNull(): Color? = textColor?.toColorOrNull()

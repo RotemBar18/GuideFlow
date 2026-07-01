@@ -24,6 +24,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -48,12 +49,14 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
     val theme = state.activeTheme()
     // Apply RTL to the text content only; overlay placement stays LTR (see GuideFlowHost).
     val dir = if (state.flow.theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+    val textColor = theme.textColorOrNull() ?: Color.Unspecified
     CompositionLocalProvider(LocalLayoutDirection provides dir) {
     Column(modifier) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 step.title,
                 style = MaterialTheme.typography.titleMedium,
+                color = textColor,
                 fontSize = theme.titleSize.sp,
                 modifier = Modifier.weight(1f),
             )
@@ -65,12 +68,13 @@ internal fun StepControls(state: ActiveFlowState, modifier: Modifier = Modifier,
             }
         }
         Spacer(Modifier.height(6.dp))
-        Text(step.body, style = MaterialTheme.typography.bodyMedium, fontSize = theme.bodySize.sp)
+        Text(step.body, style = MaterialTheme.typography.bodyMedium, color = textColor, fontSize = theme.bodySize.sp)
         if (theme.showProgress) {
             Spacer(Modifier.height(10.dp))
             Text(
                 theme.progressText(state.currentStepIndex + 1, state.totalSteps),
                 style = MaterialTheme.typography.labelSmall,
+                color = textColor,
             )
         }
         Spacer(Modifier.height(12.dp))

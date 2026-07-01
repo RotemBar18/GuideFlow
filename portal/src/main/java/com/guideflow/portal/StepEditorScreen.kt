@@ -87,7 +87,7 @@ fun StepEditorScreen(
     var previewDark by remember { mutableStateOf(false) }
     val theme = if (previewDark) themedFlow.themeDark else themedFlow.theme
     val previewCard = parseHexOrNull(theme.backgroundColor) ?: if (previewDark) Color(0xFF1B1F27) else Color.White
-    val previewText = if (previewDark) Color.White else Gf.ink
+    val previewText = parseHexOrNull(theme.textColor) ?: if (previewDark) Color.White else Gf.ink
     // Real step position so the preview hides Back on step 1 and shows the Done label on the last step.
     val previewTotal = themedFlow.steps.size.coerceAtLeast(1)
     val previewIndex = (existing?.let { e -> themedFlow.steps.indexOfFirst { it.id == e.id } } ?: -1).coerceAtLeast(0)

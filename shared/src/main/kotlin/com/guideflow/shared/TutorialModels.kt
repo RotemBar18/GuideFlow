@@ -46,6 +46,7 @@ data class FlowTheme(
     val rtl: Boolean = false,              // right-to-left layout for the overlay
     val dimOpacity: Float = 0.6f,          // 0..1, spotlight/modal scrim darkness
     val cornerRadius: Int = 14,            // dp for cards/bubbles
+    val textColor: String? = null,         // title + body text; null = follow the device/card
     val titleSize: Int = 16,               // sp; font follows the host app's theme
     val bodySize: Int = 14,                // sp
     val nextLabel: String = "Next",

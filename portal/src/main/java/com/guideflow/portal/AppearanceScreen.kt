@@ -89,7 +89,7 @@ fun AppearanceScreen(
     val accentColor = parseColor(cur.accentColor ?: "#4F5BD5")
     val buttonTextColor = parseColorOrNull(cur.buttonTextColor) ?: Color.White
     val cardColor = parseColorOrNull(cur.backgroundColor) ?: if (editingDark) Color(0xFF1B1F27) else Color.White
-    val txtColor = if (editingDark) Color.White else Gf.ink
+    val txtColor = parseColorOrNull(cur.textColor) ?: if (editingDark) Color.White else Gf.ink
 
     Scaffold(
         containerColor = Gf.surface,
@@ -141,7 +141,7 @@ fun AppearanceScreen(
                     TwoWaySegment("Light", "Dark", editingDark) { editingDark = it }
                 }
                 Box(Modifier.guideFlowAnchor("portal_appearance_preview")) {
-                    ThemedPreview(cur, accentColor, buttonTextColor, cardColor, txtColor, "Welcome", "This is how your tutorial looks.", 1, 3)
+                    ThemedPreview(cur, accentColor, buttonTextColor, cardColor, txtColor, "Your tutorial", "This is how your steps look, with Back on later steps.", 2, 3)
                 }
             }
 
@@ -200,7 +200,10 @@ fun AppearanceScreen(
 
                 // ---- Typography ----
                 SectionDivider()
-                SectionLabel("Text size", Modifier.guideFlowAnchor("portal_appearance_textsize"))
+                SectionLabel("Text", Modifier.guideFlowAnchor("portal_appearance_textsize"))
+                Text("Text colour (blank = follow device light/dark)", color = Gf.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                SwatchRow(listOf("#FFFFFF", "#11141B"), cur.textColor) { set(cur.copy(textColor = it)) }
+                OutlinedTextField(cur.textColor ?: "", { set(cur.copy(textColor = it.ifBlank { null })) }, singleLine = true, label = { Text("Text colour hex") }, modifier = Modifier.fillMaxWidth())
                 Text("Font follows the host app's theme.", color = Gf.textFaint, fontSize = 11.sp)
                 Text("Title size  ${cur.titleSize}sp", color = Gf.textSecondary, fontSize = 12.sp)
                 Slider(value = cur.titleSize.toFloat(), onValueChange = { set(cur.copy(titleSize = it.roundToInt())) }, valueRange = 12f..30f)
