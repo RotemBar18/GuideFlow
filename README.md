@@ -41,17 +41,17 @@ The backend is deployed on Google Cloud Run and works from any network:
 
 ## Screenshots
 
-Portal screens (add PNGs to `docs/screenshots/` to render):
+The SDK in the Pulse demo app (library, player, and the three overlay types):
 
-| Login | Projects | Flows | Steps | Step editor |
+| Library | Player | Tooltip | Spotlight | Modal |
 |---|---|---|---|---|
-| ![login](docs/screenshots/login.png) | ![projects](docs/screenshots/projects.png) | ![flows](docs/screenshots/flows.png) | ![steps](docs/screenshots/steps.png) | ![editor](docs/screenshots/step-editor.png) |
+| ![library](docs/screenshots/app-library.png) | ![player](docs/screenshots/app-player.png) | ![tooltip](docs/screenshots/tooltip.png) | ![spotlight](docs/screenshots/spotlight.png) | ![modal](docs/screenshots/modal.png) |
 
-SDK overlays in the demo app:
+The authoring portal:
 
-| Tooltip | Spotlight | Modal |
-|---|---|---|
-| ![tooltip](docs/screenshots/tooltip.png) | ![spotlight](docs/screenshots/spotlight.png) | ![modal](docs/screenshots/modal.png) |
+| Login | Projects | Flows | Step editor | Appearance | Analytics |
+|---|---|---|---|---|---|
+| ![login](docs/screenshots/login.png) | ![projects](docs/screenshots/projects.png) | ![flows](docs/screenshots/flows.png) | ![step editor](docs/screenshots/step-editor.png) | ![appearance](docs/screenshots/appearance.png) | ![analytics](docs/screenshots/analytics.png) |
 
 ## Published config (JSON)
 
