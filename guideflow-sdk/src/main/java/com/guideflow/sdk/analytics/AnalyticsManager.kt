@@ -50,7 +50,14 @@ internal class AnalyticsManager(
             dao.insert(AnalyticsEventEntity(event.eventId, event.timestamp, json.encodeToString(event)))
             val over = dao.count() - MAX_EVENTS
             if (over > 0) dao.deleteOldest(over)
-            AnalyticsUploadWorker.enqueue(appContext, baseUrl, projectKey)
+            // Terminal events (a flow finished) upload immediately so summaries update promptly;
+            // per-step events are batched via WorkManager.
+            if (type == EventType.FLOW_COMPLETED || type == EventType.FLOW_SKIPPED) {
+                runCatching { uploadPending(appContext, baseUrl, projectKey) }
+                    .onFailure { AnalyticsUploadWorker.enqueue(appContext, baseUrl, projectKey) }
+            } else {
+                AnalyticsUploadWorker.enqueue(appContext, baseUrl, projectKey)
+            }
         }
     }
 

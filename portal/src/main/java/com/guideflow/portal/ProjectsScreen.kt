@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -51,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.BlockingOverlay
 import com.guideflow.portal.ui.ErrorStateView
+import com.guideflow.portal.ui.GfDialog
 import com.guideflow.portal.ui.EmptyState
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
@@ -165,27 +165,27 @@ fun ProjectsScreen(
     }
 
     deleteTarget?.let { target ->
-        AlertDialog(
-            onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete project?", fontWeight = FontWeight.Bold) },
-            text = { Text("\"${target.name}\", all its flows, steps, and analytics will be permanently deleted. Apps using its project key will stop receiving config.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        deleteTarget = null
-                        busy = true
-                        scope.launch {
-                            runCatching { api.deleteProject(target.projectId, getToken()) }
-                                .onSuccess { reload() }
-                                .onFailure { error = it.message ?: "Failed to delete project" }
-                            busy = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Gf.errorFg),
-                ) { Text("Delete") }
+        GfDialog(
+            title = "Delete project?",
+            confirmText = "Delete",
+            destructive = true,
+            onConfirm = {
+                deleteTarget = null
+                busy = true
+                scope.launch {
+                    runCatching { api.deleteProject(target.projectId, getToken()) }
+                        .onSuccess { reload() }
+                        .onFailure { error = it.message ?: "Failed to delete project" }
+                    busy = false
+                }
             },
-            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
-        )
+            onDismiss = { deleteTarget = null },
+        ) {
+            Text(
+                "\"${target.name}\", all its flows, steps, and analytics will be permanently deleted. Apps using its project key will stop receiving config.",
+                color = Gf.textSecondary, fontSize = 13.5.sp, lineHeight = 19.sp,
+            )
+        }
     }
 
     if (busy) BlockingOverlay("Deleting project...")
@@ -228,22 +228,18 @@ private fun ProjectCard(project: ProjectDto, modifier: Modifier = Modifier, onCl
 @Composable
 private fun CreateProjectDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("New project", fontWeight = FontWeight.Bold) },
-        text = {
-            OutlinedTextField(
-                value = name, onValueChange = { name = it },
-                label = { Text("Project name") }, singleLine = true,
-            )
-        },
-        confirmButton = {
-            Button(onClick = { if (name.isNotBlank()) onCreate(name.trim()) },
-                enabled = name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = Gf.primary)) { Text("Create") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Gf.textSecondary) } },
-    )
+    GfDialog(
+        title = "New project",
+        confirmText = "Create",
+        confirmEnabled = name.isNotBlank(),
+        onConfirm = { if (name.isNotBlank()) onCreate(name.trim()) },
+        onDismiss = onDismiss,
+    ) {
+        OutlinedTextField(
+            value = name, onValueChange = { name = it },
+            label = { Text("Project name") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

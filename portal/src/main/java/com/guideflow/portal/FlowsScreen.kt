@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.BlockingOverlay
 import com.guideflow.portal.ui.EmptyState
+import com.guideflow.portal.ui.GfDialog
 import com.guideflow.portal.ui.ErrorStateView
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
@@ -174,56 +174,50 @@ fun FlowsScreen(
 
     renameTarget?.let { target ->
         var newName by remember(target.id) { mutableStateOf(target.name) }
-        AlertDialog(
-            onDismissRequest = { renameTarget = null },
-            title = { Text("Rename flow", fontWeight = FontWeight.Bold) },
-            text = {
-                OutlinedTextField(
-                    value = newName, onValueChange = { newName = it },
-                    label = { Text("Display name") }, singleLine = true,
-                )
+        GfDialog(
+            title = "Rename flow",
+            confirmText = "Save",
+            confirmEnabled = newName.isNotBlank(),
+            onConfirm = {
+                val name = newName.trim()
+                renameTarget = null
+                scope.launch {
+                    runCatching { api.renameFlow(target.id, name, getToken()) }
+                        .onSuccess { reload() }
+                        .onFailure { error = it.message ?: "Failed to rename flow" }
+                }
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val name = newName.trim()
-                        renameTarget = null
-                        scope.launch {
-                            runCatching { api.renameFlow(target.id, name, getToken()) }
-                                .onSuccess { reload() }
-                                .onFailure { error = it.message ?: "Failed to rename flow" }
-                        }
-                    },
-                    enabled = newName.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
-                ) { Text("Save") }
-            },
-            dismissButton = { TextButton(onClick = { renameTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
-        )
+            onDismiss = { renameTarget = null },
+        ) {
+            OutlinedTextField(
+                value = newName, onValueChange = { newName = it },
+                label = { Text("Display name") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 
     deleteTarget?.let { target ->
-        AlertDialog(
-            onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete flow?", fontWeight = FontWeight.Bold) },
-            text = { Text("\"${target.name}\" and its ${target.steps.size} step${if (target.steps.size == 1) "" else "s"} will be permanently deleted.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        deleteTarget = null
-                        busy = true
-                        scope.launch {
-                            runCatching { api.deleteFlow(target.id, getToken()) }
-                                .onSuccess { reload() }
-                                .onFailure { error = it.message ?: "Failed to delete flow" }
-                            busy = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Gf.errorFg),
-                ) { Text("Delete") }
+        GfDialog(
+            title = "Delete flow?",
+            confirmText = "Delete",
+            destructive = true,
+            onConfirm = {
+                deleteTarget = null
+                busy = true
+                scope.launch {
+                    runCatching { api.deleteFlow(target.id, getToken()) }
+                        .onSuccess { reload() }
+                        .onFailure { error = it.message ?: "Failed to delete flow" }
+                    busy = false
+                }
             },
-            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = Gf.textSecondary) } },
-        )
+            onDismiss = { deleteTarget = null },
+        ) {
+            Text(
+                "\"${target.name}\" and its ${target.steps.size} step${if (target.steps.size == 1) "" else "s"} will be permanently deleted.",
+                color = Gf.textSecondary, fontSize = 13.5.sp, lineHeight = 19.sp,
+            )
+        }
     }
 
     if (busy) BlockingOverlay("Deleting flow...")
@@ -270,30 +264,24 @@ private fun FlowFormDialog(
 ) {
     var key by remember { mutableStateOf(initialKey) }
     var name by remember { mutableStateOf(initialName) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = name, onValueChange = { name = it },
-                    label = { Text("Display name *") }, singleLine = true,
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = key, onValueChange = { key = it.lowercase().replace(' ', '_') },
-                    label = { Text("Flow key *") }, singleLine = true,
-                    supportingText = { Text("Used in code: startFlow(\"$key\"). Lowercase, no spaces. Can't change later.", fontSize = 11.sp) },
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = { if (key.isNotBlank() && name.isNotBlank()) onConfirm(key.trim(), name.trim()) },
-                enabled = key.isNotBlank() && name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = Gf.primary)) { Text(confirmText) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Gf.textSecondary) } },
-    )
+    GfDialog(
+        title = title,
+        confirmText = confirmText,
+        confirmEnabled = key.isNotBlank() && name.isNotBlank(),
+        onConfirm = { if (key.isNotBlank() && name.isNotBlank()) onConfirm(key.trim(), name.trim()) },
+        onDismiss = onDismiss,
+    ) {
+        OutlinedTextField(
+            value = name, onValueChange = { name = it },
+            label = { Text("Display name *") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = key, onValueChange = { key = it.lowercase().replace(' ', '_') },
+            label = { Text("Flow key *") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+            supportingText = { Text("Used in code: startFlow(\"$key\"). Lowercase, no spaces. Can't change later.", fontSize = 11.sp) },
+        )
+    }
 }
 
 /** Shared white header with a back affordance + breadcrumb + title. */

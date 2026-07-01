@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,12 +19,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +49,45 @@ fun typeBlurb(type: StepType): String = when (type) {
 
 fun typeNeedsAnchor(type: StepType): Boolean =
     type == StepType.TOOLTIP || type == StepType.SPOTLIGHT
+
+/**
+ * Branded modal dialog: rounded card, bold title, custom content, and a Cancel +
+ * primary/destructive action row. Replaces the plain Material AlertDialog.
+ */
+@Composable
+fun GfDialog(
+    title: String,
+    confirmText: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    confirmEnabled: Boolean = true,
+    destructive: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit = {},
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Gf.card).padding(22.dp),
+        ) {
+            Text(title, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 19.sp)
+            Spacer(Modifier.height(14.dp))
+            content()
+            Spacer(Modifier.height(22.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onDismiss) { Text("Cancel", color = Gf.textSecondary, fontWeight = FontWeight.SemiBold) }
+                Button(
+                    onClick = onConfirm,
+                    enabled = confirmEnabled,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (destructive) Gf.errorFg else Gf.primary),
+                ) { Text(confirmText, fontWeight = FontWeight.SemiBold) }
+            }
+        }
+    }
+}
 
 /** Full-screen scrim + spinner that blocks all input until an operation finishes. */
 @Composable

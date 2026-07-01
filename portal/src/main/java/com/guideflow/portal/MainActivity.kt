@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
         GuideFlow.initialize(
             context = applicationContext,
             projectKey = PORTAL_PROJECT_KEY,
-            config = GuideFlowConfig(baseUrl = BASE_URL, enableAnalytics = false, debugLogging = true),
+            config = GuideFlowConfig(baseUrl = BASE_URL, debugLogging = true),
         )
 
         enableEdgeToEdge()
