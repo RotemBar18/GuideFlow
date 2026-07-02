@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -179,17 +180,26 @@ private fun PortalApp() {
 
 @Composable
 private fun LoginScreen(busy: Boolean, error: String?, onSignIn: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Color(0xFFFCFCFD)).systemBarsPadding(), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(Gf.background).systemBarsPadding(), contentAlignment = Alignment.Center) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // The app's launcher icon, above the name.
-            Image(
-                painter = painterResource(R.drawable.guideflow_logo),
-                contentDescription = "GuideFlow",
-                modifier = Modifier.size(96.dp).clip(RoundedCornerShape(24.dp)),
-            )
+            // The app's launcher icon, on a soft brand spotlight glow.
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.size(300.dp).background(
+                        Brush.radialGradient(
+                            listOf(Gf.secondary.copy(alpha = if (Gf.isDark) 0.32f else 0.16f), Color.Transparent),
+                        ),
+                    ),
+                )
+                Image(
+                    painter = painterResource(R.drawable.guideflow_logo),
+                    contentDescription = "GuideFlow",
+                    modifier = Modifier.size(96.dp).clip(RoundedCornerShape(24.dp)),
+                )
+            }
 
             Spacer(Modifier.height(26.dp))
             Text("GuideFlow", color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 26.sp)

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,6 +69,7 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
         val yPx = if (fitsBelow) belowY else (anchor.bounds.top - gapPx - cardSize.height).coerceAtLeast(marginPx)
         val xPx = anchor.bounds.left.coerceIn(marginPx, (maxWidthPx - cardSize.width - marginPx).coerceAtLeast(marginPx))
 
+        val cardBg = theme.cardColorOrDefault()
         Card(
             modifier = Modifier
                 .offset { IntOffset(xPx.roundToInt(), yPx.roundToInt()) }
@@ -75,7 +77,10 @@ internal fun TooltipOverlay(state: ActiveFlowState, anchor: AnchorInfo) {
                 .onSizeChanged { cardSize = it }
                 .testTag(GuideFlowOverlayTags.TOOLTIP),
             shape = RoundedCornerShape(theme.cornerRadius.dp),
-            colors = CardDefaults.cardColors(containerColor = theme.cardColorOrDefault()),
+            colors = CardDefaults.cardColors(containerColor = cardBg),
+            // Tooltip has no dimmer: an optional shadow + auto-shaded border keep it readable.
+            elevation = CardDefaults.cardElevation(defaultElevation = if (theme.tooltipShadow) theme.tooltipShadowStrength.dp else 0.dp),
+            border = if (theme.tooltipBorder) BorderStroke(1.dp, autoEdgeColor(cardBg, theme.tooltipBorderStrength)) else null,
         ) {
             StepControls(state, Modifier.padding(16.dp), advanceByTap = state.currentStep.advanceOnTap)
         }

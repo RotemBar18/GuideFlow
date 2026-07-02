@@ -43,7 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.shadow
 import com.guideflow.portal.ui.Gf
+import com.guideflow.portal.ui.GfGradientButton
+import com.guideflow.portal.ui.autoEdgeColor
+import com.guideflow.portal.ui.GfSegmented
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.shared.FlowTheme
@@ -55,7 +59,7 @@ import kotlin.math.roundToInt
 private val ACCENT_SWATCHES = listOf("#4F5BD5", "#0F9D58", "#D64545", "#B45309", "#7C3AED", "#11141B")
 
 private fun parseColor(hex: String): Color =
-    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Gf.primary)
+    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Color(0xFF4F5BD5))
 
 private fun parseColorOrNull(hex: String?): Color? =
     hex?.ifBlank { null }?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
@@ -100,7 +104,8 @@ fun AppearanceScreen(
         bottomBar = {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                 error?.let { Text(it, color = Gf.errorFg, fontSize = 12.sp); Spacer(Modifier.height(6.dp)) }
-                Button(
+                GfGradientButton(
+                    text = if (saving) "Saving…" else "Save theme",
                     onClick = {
                         saving = true; error = null
                         scope.launch {
@@ -110,20 +115,11 @@ fun AppearanceScreen(
                         }
                     },
                     enabled = !saving,
-                    modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
-                ) {
-                    if (saving) {
-                        CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                        Spacer(Modifier.size(10.dp))
-                        Text("Saving...", fontWeight = FontWeight.SemiBold)
-                    } else {
-                        Text("Save light + dark", fontWeight = FontWeight.SemiBold)
-                    }
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Text(
-                    "Saving moves the flow to Draft. Republish to push the new look.",
-                    color = Gf.textFaint, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp),
+                    "Saves both the light and dark variants and moves the flow to Draft. Republish to push the new look.",
+                    color = Gf.textFaint, fontSize = 11.sp, lineHeight = 15.sp, modifier = Modifier.padding(top = 8.dp),
                 )
             }
         },
@@ -201,6 +197,17 @@ fun AppearanceScreen(
                 Text("Dim opacity  ${(cur.dimOpacity * 100).roundToInt()}%", color = Gf.textSecondary, fontSize = 12.sp)
                 Slider(value = cur.dimOpacity, onValueChange = { set(cur.copy(dimOpacity = it)) }, valueRange = 0.2f..0.9f)
 
+                // ---- Tooltip (no dimmer) ----
+                SectionDivider()
+                SectionLabel("Tooltip")
+                Text("Tooltips sit on your live screen with no dimmer. These keep them readable; the border colour is derived automatically from the card background.", color = Gf.textMuted, fontSize = 11.5.sp, lineHeight = 16.sp)
+                ToggleRow("Shadow", cur.tooltipShadow) { set(cur.copy(tooltipShadow = it)) }
+                Text("Shadow strength  ${cur.tooltipShadowStrength}dp", color = if (cur.tooltipShadow) Gf.textSecondary else Gf.textFaint, fontSize = 12.sp)
+                Slider(value = cur.tooltipShadowStrength.toFloat(), onValueChange = { set(cur.copy(tooltipShadowStrength = it.roundToInt())) }, valueRange = 2f..28f, enabled = cur.tooltipShadow)
+                ToggleRow("Border", cur.tooltipBorder) { set(cur.copy(tooltipBorder = it)) }
+                Text("Border strength  ${(cur.tooltipBorderStrength * 100).roundToInt()}%", color = if (cur.tooltipBorder) Gf.textSecondary else Gf.textFaint, fontSize = 12.sp)
+                Slider(value = cur.tooltipBorderStrength, onValueChange = { set(cur.copy(tooltipBorderStrength = it)) }, valueRange = 0.08f..0.5f, enabled = cur.tooltipBorder)
+
                 // ---- Typography ----
                 SectionDivider()
                 SectionLabel("Text", Modifier.guideFlowAnchor("portal_appearance_textsize"))
@@ -228,17 +235,12 @@ fun AppearanceScreen(
 
 @Composable
 private fun TwoWaySegment(left: String, right: String, rightSelected: Boolean, onSelect: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFEEF0F3)).padding(3.dp)) {
-        listOf(false to left, true to right).forEach { (isRight, label) ->
-            val sel = rightSelected == isRight
-            Box(
-                Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
-                    .background(if (sel) Gf.primary else Color.Transparent)
-                    .clickable { onSelect(isRight) }.padding(vertical = 9.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(label, color = if (sel) Color.White else Gf.textSecondary, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp) }
-        }
-    }
+    GfSegmented(
+        options = listOf(left, right),
+        selected = if (rightSelected) 1 else 0,
+        onSelect = { onSelect(it == 1) },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -276,13 +278,18 @@ private fun ThemedPreview(
     val isFirst = stepNumber <= 1
     val isLast = stepNumber >= totalSteps
     Box(
-        Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFEEF0F3)),
+        Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(Gf.surfaceContainer),
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = theme.dimOpacity)))
         CompositionLocalProvider(LocalLayoutDirection provides if (theme.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
             Column(
-                Modifier.fillMaxWidth(0.8f).clip(RoundedCornerShape(theme.cornerRadius.dp)).background(cardColor).padding(16.dp),
+                Modifier.fillMaxWidth(0.8f)
+                    .then(if (theme.tooltipShadow) Modifier.shadow(theme.tooltipShadowStrength.dp, RoundedCornerShape(theme.cornerRadius.dp)) else Modifier)
+                    .clip(RoundedCornerShape(theme.cornerRadius.dp))
+                    .background(cardColor)
+                    .then(if (theme.tooltipBorder) Modifier.border(1.dp, autoEdgeColor(cardColor, theme.tooltipBorderStrength), RoundedCornerShape(theme.cornerRadius.dp)) else Modifier)
+                    .padding(16.dp),
             ) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(title, color = textColor, fontWeight = FontWeight.Bold, fontSize = theme.titleSize.sp, maxLines = 1, modifier = Modifier.weight(1f))

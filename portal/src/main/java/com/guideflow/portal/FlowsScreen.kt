@@ -1,5 +1,6 @@
 package com.guideflow.portal
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,7 @@ import com.guideflow.portal.ui.GfDialog
 import com.guideflow.portal.ui.ErrorStateView
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
+import com.guideflow.portal.ui.GfFab
 import com.guideflow.portal.ui.SectionLabel
 import com.guideflow.portal.ui.StatusPill
 import com.guideflow.sdk.compose.guideFlowAnchor
@@ -108,11 +110,7 @@ fun FlowsScreen(
         containerColor = Gf.surface,
         topBar = { DetailHeader(backLabel = "Projects", title = project.name, onBack = onBack) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showCreate = true },
-                containerColor = Gf.primary, contentColor = Color.White, shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.guideFlowAnchor("portal_new_flow"),
-            ) { Text("+  New flow", fontWeight = FontWeight.SemiBold) }
+            GfFab("New flow", onClick = { showCreate = true }, modifier = Modifier.guideFlowAnchor("portal_new_flow"))
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
@@ -241,7 +239,9 @@ private fun FlowCard(flow: TutorialFlow, isFirst: Boolean = false, onClick: () -
                     )
                     DropdownMenu(
                         expanded = menu, onDismissRequest = { menu = false },
-                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
+                        shape = RoundedCornerShape(14.dp),
+                        containerColor = Gf.card,
+                        border = BorderStroke(1.dp, Gf.outlineStrong),
                     ) {
                         DropdownMenuItem(text = { Text("Rename", color = Gf.ink) }, onClick = { menu = false; onRename() })
                         DropdownMenuItem(text = { Text("Duplicate", color = Gf.ink) }, onClick = { menu = false; onDuplicate() })

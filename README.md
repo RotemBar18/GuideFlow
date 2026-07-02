@@ -32,7 +32,8 @@ The backend is deployed on Google Cloud Run and works from any network:
 - Advance-on-tap steps: the highlighted element stays interactive, so tapping it both runs the app's own action (for example navigation) and advances the tour. That step shows no Next button. While a step is active the rest of the screen is blocked, so the user cannot wander off the tour.
 - The Back button can be turned off per flow, which suits flows that change screens (Back moves the tour back but cannot navigate the host app back).
 - Missing-anchor fallback: a tooltip or spotlight whose anchor is not on screen falls back to a modal and emits an anchor-missing callback. The SDK does not crash the host app.
-- Per-flow theming, with separate light and dark designs selected by the device theme: accent colour, button-text colour, card background, corner radius, dim opacity, right-to-left layout, custom Next/Back/Skip/Done labels, a customizable step-counter format, and title/body text size. The font follows the host app's own theme.
+- Per-flow theming, with separate light and dark designs selected by the device theme: accent colour, button-text colour, card background, text colour, corner radius, dim opacity, right-to-left layout, custom Next/Back/Skip/Done labels, a customizable step-counter format, and title/body text size. The font follows the host app's own theme.
+- Tooltip readability controls: because tooltips have no background dimmer, each flow can toggle a drop shadow and an auto-shaded border (with adjustable strength) so the bubble stays legible even when its background matches the app's.
 - One-request remote config (`GET /api/client/config`), with `304 Not Modified` based on config version.
 - Offline cache in DataStore. A failed refresh keeps the previous config.
 - Analytics: the SDK records flow and step events into a Room queue and uploads them with WorkManager (deleting only events the server acknowledges); the backend aggregates per-flow summaries that the portal displays as a completion rate, metric tiles, and a per-step view chart.
@@ -41,17 +42,7 @@ The backend is deployed on Google Cloud Run and works from any network:
 
 ## Screenshots
 
-The SDK running in the Pulse demo app: the home and player screens, and two overlay types (spotlight and modal) rendered over the live app.
-
-| Library | Player | Spotlight | Modal |
-|---|---|---|---|
-| ![library](docs/screenshots/demoapp_mainScreen.jpeg) | ![player](docs/screenshots/demoapp_mediaplayer.jpeg) | ![spotlight](docs/screenshots/demoapp_spotlight_demo.jpeg) | ![modal](docs/screenshots/demoapp_modal_demo.jpeg) |
-
-Authoring in the portal: Google sign-in, the step editor with a live themed preview (a tooltip here), the per-flow appearance editor, and the analytics view.
-
-| Login | Step editor | Appearance | Analytics |
-|---|---|---|---|
-| ![login](docs/screenshots/portal_login.jpeg) | ![step editor](docs/screenshots/portal_editStep_tooltip.jpeg) | ![appearance](docs/screenshots/portal_theme_dark.jpeg) | ![analytics](docs/screenshots/portal_analytics.jpeg) |
+_Screenshots are being refreshed for the redesigned portal (now with light + dark themes) and the demo app — coming soon._
 
 ## Published config (JSON)
 
@@ -331,7 +322,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.3.0")
+    implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.4.0")
 }
 ```
 

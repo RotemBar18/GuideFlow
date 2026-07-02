@@ -84,7 +84,7 @@ Three steps: add the dependency, put your project key in the manifest (the SDK a
 
 ```kotlin
 // 1. app/build.gradle.kts  — depend on the published SDK (JitPack)
-dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.3.0") }
+dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.4.0") }
 ```
 
 ```xml
@@ -115,7 +115,7 @@ dependencyResolutionManagement {
 }
 
 // app/build.gradle.kts
-dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.3.0") }
+dependencies { implementation("com.github.RotemBar18.GuideFlow:guideflow-sdk:1.4.0") }
 ```
 
 The SDK declares the `INTERNET` permission itself; it merges into your app. No other manifest change is needed for an HTTPS backend.
@@ -282,6 +282,7 @@ Each flow has two `FlowTheme` objects, `theme` (light) and `themeDark` (dark). T
 | `accentColor` | SDK blue | Colour of the Next/Done button (`#RRGGBB`). |
 | `buttonTextColor` | white | Text/foreground on the accent button. |
 | `backgroundColor` | follows device | Card surface; leave unset to follow light/dark. |
+| `textColor` | follows device | Title/body text colour; leave unset to follow the card/device. |
 | `rtl` | `false` | Right-to-left layout for the overlay text. |
 | `dimOpacity` | `0.6` | Darkness of the spotlight/modal scrim (0 to 1). |
 | `cornerRadius` | `14` | Corner radius in dp for cards and the spotlight cutout. |
@@ -292,6 +293,12 @@ Each flow has two `FlowTheme` objects, `theme` (light) and `themeDark` (dark). T
 | `showProgress` | `true` | Show the step counter. |
 | `showSkip` | `true` | Show the Skip button (hidden on the last step). |
 | `showBack` | `true` | Show the Back button (turn off for flows that change screens). |
+| `tooltipShadow` | `true` | Soft drop shadow behind the tooltip card (tooltips have no dimmer). |
+| `tooltipShadowStrength` | `12` | Shadow elevation in dp when `tooltipShadow` is on. |
+| `tooltipBorder` | `true` | Hairline border on the tooltip, auto-shaded from the card background. |
+| `tooltipBorderStrength` | `0.24` | How far the border shifts from the card colour (0 to 1). |
+
+Tooltip-only note: a tooltip renders directly over your live screen with no dimmer, so `tooltipShadow`/`tooltipBorder` keep it readable even when its background matches the app's. The border colour is derived automatically (darker on light cards, lighter on dark ones). Modal and spotlight ignore these (they dim the screen).
 
 The font is intentionally not themeable; overlay text uses the host app's own typography so tutorials feel native.
 

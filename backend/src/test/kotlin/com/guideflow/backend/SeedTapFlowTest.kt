@@ -162,8 +162,12 @@ class SeedTapFlowTest {
         store.listFlows(projectId).firstOrNull { it.flowKey == "portal_tour" }?.let { store.deleteFlow(it.flowId) }
 
         val flow = store.createFlow(projectId, "portal_tour", "Portal walkthrough")
-        val noBack = FlowTheme(showBack = false)
-        store.updateFlow(flow.flowId, flowKey = null, name = null, theme = noBack, themeDark = noBack)
+        // On-brand classic light + dark, with Back hidden (this tour changes screens).
+        store.updateFlow(
+            flow.flowId, flowKey = null, name = null,
+            theme = FlowTheme.CLASSIC_LIGHT.copy(showBack = false),
+            themeDark = FlowTheme.CLASSIC_DARK.copy(showBack = false),
+        )
 
         // (type, anchorKey, title, body, advanceOnTap). advanceOnTap drives screen changes.
         val steps = listOf(

@@ -3,6 +3,7 @@ package com.guideflow.sdk.compose
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import com.guideflow.sdk.flow.ActiveFlowState
 import com.guideflow.shared.FlowTheme
 
@@ -34,6 +35,14 @@ private val DEFAULT_CARD_LIGHT = Color.White
 private val DEFAULT_CARD_DARK = Color(0xFF1B1F27)
 private val DEFAULT_TEXT_LIGHT = Color(0xFF11141B)
 private val DEFAULT_TEXT_DARK = Color.White
+
+/**
+ * A border shade derived from the card background: a bit darker for light cards, a bit
+ * lighter for dark ones, so a tooltip's edge is always visible regardless of the host screen.
+ */
+internal fun autoEdgeColor(bg: Color, strength: Float = 0.24f): Color =
+    if (bg.luminance() > 0.5f) androidx.compose.ui.graphics.lerp(bg, Color.Black, strength)
+    else androidx.compose.ui.graphics.lerp(bg, Color.White, strength)
 
 /** Card background: the theme's colour, or the default (white / dark-navy by device mode). */
 @Composable

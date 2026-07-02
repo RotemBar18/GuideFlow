@@ -42,7 +42,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 groupId = "com.github.RotemBar18.GuideFlow"
                 artifactId = "guideflow-sdk"
-                version = "1.3.0"
+                version = "1.4.0"
                 from(components["release"])
             }
         }

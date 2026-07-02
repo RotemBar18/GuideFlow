@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.guideflow.portal.ui.EmptyState
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
+import com.guideflow.portal.ui.GfGradientButton
 import com.guideflow.portal.ui.StatusPill
 import com.guideflow.portal.ui.TypeBadge
 import com.guideflow.portal.ui.TypeGlyph
@@ -123,7 +124,8 @@ fun StepsScreen(
                     OutlinedButton(onClick = onAddStep, modifier = Modifier.weight(1f).height(50.dp).guideFlowAnchor("portal_add_step"), shape = RoundedCornerShape(14.dp)) {
                         Text("+  Add step", color = Gf.textPrimary, fontWeight = FontWeight.SemiBold)
                     }
-                    Button(
+                    GfGradientButton(
+                        text = if (publishing) "Publishing…" else "Publish",
                         onClick = {
                             publishing = true
                             scope.launch {
@@ -134,9 +136,9 @@ fun StepsScreen(
                             }
                         },
                         enabled = canPublish && !publishing,
-                        modifier = Modifier.weight(1f).height(50.dp).guideFlowAnchor("portal_publish"), shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Gf.primary),
-                    ) { Text("Publish", fontWeight = FontWeight.SemiBold) }
+                        height = 50.dp,
+                        modifier = Modifier.weight(1f).guideFlowAnchor("portal_publish"),
+                    )
                 }
                 if (steps.isEmpty()) {
                     Spacer(Modifier.height(6.dp))
@@ -181,7 +183,7 @@ private fun ValidationBanner(issues: List<String>, modifier: Modifier = Modifier
             Text("Can't publish yet: ${issues.size} issue${if (issues.size == 1) "" else "s"}", color = Gf.errorText, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
         Spacer(Modifier.height(8.dp))
-        issues.forEach { Text("•  $it", color = Color(0xFFA85151), fontSize = 12.sp, lineHeight = 19.sp) }
+        issues.forEach { Text("•  $it", color = Gf.errorFg, fontSize = 12.sp, lineHeight = 19.sp) }
     }
 }
 

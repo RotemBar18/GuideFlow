@@ -57,6 +57,11 @@ data class FlowTheme(
     val showProgress: Boolean = true,
     val showSkip: Boolean = true,
     val showBack: Boolean = true, // hide Back for flows that change screens (Back can't un-navigate)
+    // Tooltips have no background dimmer, so these keep them readable on any screen.
+    val tooltipShadow: Boolean = true,          // soft drop shadow behind the tooltip card
+    val tooltipShadowStrength: Int = 12,        // dp elevation of that shadow when enabled
+    val tooltipBorder: Boolean = true,          // hairline border auto-shaded from the card background
+    val tooltipBorderStrength: Float = 0.24f,   // 0..1 blend toward black (light card) / white (dark card)
 ) {
     companion object {
         /** Classic light theme applied to a newly created flow's light variant. */

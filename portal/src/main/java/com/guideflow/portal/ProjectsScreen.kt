@@ -1,5 +1,6 @@
 package com.guideflow.portal
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -54,6 +56,7 @@ import com.guideflow.portal.ui.GfDialog
 import com.guideflow.portal.ui.EmptyState
 import com.guideflow.portal.ui.Gf
 import com.guideflow.portal.ui.GfCard
+import com.guideflow.portal.ui.GfFab
 import com.guideflow.sdk.compose.guideFlowAnchor
 import com.guideflow.shared.ProjectDto
 import kotlinx.coroutines.launch
@@ -98,7 +101,9 @@ fun ProjectsScreen(
                         TextButton(onClick = { menuOpen = true }) { Text("⋮", fontSize = 20.sp, color = Gf.textSecondary) }
                         DropdownMenu(
                             expanded = menuOpen, onDismissRequest = { menuOpen = false },
-                            modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
+                            shape = RoundedCornerShape(14.dp),
+                            containerColor = Gf.card,
+                            border = BorderStroke(1.dp, Gf.outlineStrong),
                         ) {
                             DropdownMenuItem(text = { Text("Take a tour", color = Gf.ink) }, onClick = { menuOpen = false; onStartTour() })
                             DropdownMenuItem(text = { Text("Sign out", color = Gf.ink) }, onClick = { menuOpen = false; onSignOut() })
@@ -111,11 +116,7 @@ fun ProjectsScreen(
             }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showCreate = true },
-                containerColor = Gf.primary, contentColor = Color.White, shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.guideFlowAnchor("portal_new_project"),
-            ) { Text("+  New project", fontWeight = FontWeight.SemiBold) }
+            GfFab("New project", onClick = { showCreate = true }, modifier = Modifier.guideFlowAnchor("portal_new_project"))
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
@@ -197,25 +198,51 @@ fun ProjectsScreen(
 @Composable
 private fun ProjectCard(project: ProjectDto, modifier: Modifier = Modifier, onClick: () -> Unit, onDelete: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
+    val published = project.configVersion > 0
+    // Vary the avatar accent per project so the list has some colour rhythm.
+    val (avBg, avFg) = if (project.name.hashCode() and 1 == 0) {
+        Gf.primaryContainer to Gf.onPrimaryContainer
+    } else {
+        Gf.tertiaryContainer to Gf.onTertiaryContainer
+    }
+    val (pillFg, pillBg) = if (published) Gf.publishedFg to Gf.publishedBg else Gf.draftFg to Gf.draftBg
     GfCard(modifier.fillMaxWidth().clickable { onClick() }) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(18.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(project.name, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Box(
+                    Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(avBg),
+                    contentAlignment = Alignment.Center,
+                ) { Text(project.name.firstOrNull()?.uppercase() ?: "P", color = avFg, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
+                Spacer(Modifier.width(13.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(project.name, color = Gf.ink, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1)
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        Modifier.clip(RoundedCornerShape(999.dp)).background(pillBg).padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(Modifier.size(6.dp).clip(RoundedCornerShape(50)).background(pillFg))
+                        Text(if (published) "PUBLISHED" else "NOT PUBLISHED YET", color = pillFg, fontWeight = FontWeight.SemiBold, fontSize = 10.5.sp, letterSpacing = 0.4.sp)
+                    }
+                }
                 Box {
-                    Text(
-                        "⋮", color = Gf.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { menu = true }.padding(horizontal = 6.dp),
-                    )
+                    Box(
+                        Modifier.size(36.dp).clip(RoundedCornerShape(50)).clickable { menu = true },
+                        contentAlignment = Alignment.Center,
+                    ) { Text("⋮", color = Gf.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     DropdownMenu(
                         expanded = menu, onDismissRequest = { menu = false },
-                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Gf.card),
+                        shape = RoundedCornerShape(14.dp),
+                        containerColor = Gf.card,
+                        border = BorderStroke(1.dp, Gf.outlineStrong),
                     ) {
                         DropdownMenuItem(text = { Text("Delete", color = Gf.errorFg) }, onClick = { menu = false; onDelete() })
                     }
                 }
-                Text("›", color = Gf.textFaint, fontSize = 18.sp)
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(14.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Gf.outline))
+            Spacer(Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     "v${project.configVersion}",
@@ -223,9 +250,10 @@ private fun ProjectCard(project: ProjectDto, modifier: Modifier = Modifier, onCl
                     modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Gf.chipBg).padding(horizontal = 8.dp, vertical = 3.dp),
                 )
                 Text(
-                    if (project.configVersion == 0) "not published yet" else "config version",
-                    color = Gf.textMuted, fontSize = 12.sp,
+                    if (published) "config version" else "not published yet",
+                    color = Gf.textMuted, fontSize = 12.sp, modifier = Modifier.weight(1f),
                 )
+                Text("›", color = Gf.textFaint, fontSize = 18.sp)
             }
         }
     }

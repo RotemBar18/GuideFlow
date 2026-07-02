@@ -121,8 +121,8 @@ fun AnalyticsScreen(
 @Composable
 private fun CompletionHero(rate: Int, completed: Int, started: Int) {
     Box(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
-            .background(Brush.linearGradient(listOf(Gf.primary, Gf.modal))),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
+            .background(Gf.brush()),
     ) {
         Column(Modifier.padding(20.dp)) {
             Text("COMPLETION RATE", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.6.sp)
