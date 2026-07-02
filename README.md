@@ -42,7 +42,17 @@ The backend is deployed on Google Cloud Run and works from any network:
 
 ## Screenshots
 
-_Screenshots are being refreshed for the redesigned portal (now with light + dark themes) and the demo app — coming soon._
+Authoring a tour (light mode):
+
+| Login | Projects | Step editor |
+|---|---|---|
+| ![login](docs/screenshots/login_light.jpeg) | ![projects](docs/screenshots/projects_light.jpeg) | ![step editor](docs/screenshots/editStep_light.jpeg) |
+
+...and theming it, light or dark (dark mode):
+
+| Flows | Appearance | Analytics |
+|---|---|---|
+| ![flows](docs/screenshots/flows_dark.jpeg) | ![appearance](docs/screenshots/theme_dark.jpeg) | ![analytics](docs/screenshots/analytics_dark.jpeg) |
 
 ## Published config (JSON)
 
